@@ -1,7 +1,8 @@
 name: easy_blue_printer
 description: "A new Flutter plugin project."
 version: 0.0.1
-homepage:
+repository: https://github.com/lucas3g/easy_blue_printer
+homepage: https://github.com/lucas3g/easy_blue_printer
 
 environment:
   sdk: ^3.6.2

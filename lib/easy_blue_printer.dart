@@ -1,8 +1,14 @@
+library;
+
 import 'package:easy_blue_printer/domain/entities/bluetooth_device.dart';
 import 'package:easy_blue_printer/domain/enums/font_size.dart';
 import 'package:easy_blue_printer/domain/enums/text_align.dart';
 
 import 'easy_blue_printer_platform_interface.dart';
+
+export 'domain/entities/bluetooth_device.dart';
+export 'domain/enums/font_size.dart';
+export 'domain/enums/text_align.dart';
 
 class EasyBluePrinter {
   Future<List<BluetoothDevice>> scanDevices() async {

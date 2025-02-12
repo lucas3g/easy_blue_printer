@@ -1,8 +1,5 @@
 import 'dart:async';
 
-import 'package:easy_blue_printer/domain/entities/bluetooth_device.dart';
-import 'package:easy_blue_printer/domain/enums/font_size.dart';
-import 'package:easy_blue_printer/domain/enums/text_align.dart';
 import 'package:easy_blue_printer/easy_blue_printer.dart';
 import 'package:flutter/material.dart';
 
