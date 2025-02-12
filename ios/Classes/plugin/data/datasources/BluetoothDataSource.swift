@@ -62,6 +62,25 @@ public class BluetoothDataSource: NSObject, CBCentralManagerDelegate, CBPeripher
         // Handle failure to connect
     }
 
+    public func centralManagerDidUpdateState(_ central: CBCentralManager) {
+        switch central.state {
+        case .unknown:
+            print("Bluetooth state is unknown")
+        case .resetting:
+            print("Bluetooth state is resetting")
+        case .unsupported:
+            print("Bluetooth is not supported on this device")
+        case .unauthorized:
+            print("Bluetooth is not authorized")
+        case .poweredOff:
+            print("Bluetooth is powered off")
+        case .poweredOn:
+            print("Bluetooth is powered on")
+        @unknown default:
+            print("A new Bluetooth state was added")
+        }
+    }
+
     // Print data
     public func printData(data: String, size: Int, align: Int, bold: Bool) -> Bool {
         guard let socket = connectedSocket else { return false }
@@ -75,7 +94,7 @@ public class BluetoothDataSource: NSObject, CBCentralManagerDelegate, CBPeripher
             try socket.write(data: alignmentData)
             try socket.write(data: boldData)
             try socket.write(data: fontSizeData)
-            try socket.write(data: data.data(using: .utf8)!)
+            try socket.write(data: [UInt8](data.utf8))
             try socket.write(data: [0x0A]) // New line
             return true
         } catch {

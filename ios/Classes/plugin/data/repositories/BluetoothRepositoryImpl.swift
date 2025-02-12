@@ -20,8 +20,8 @@ public class BluetoothRepositoryImpl: BluetoothRepository {
     }
 
     // Desconectar do dispositivo atualmente conectado
-    public func disconnectToDevice() -> Bool {
-        return dataSource.disconnectToDevice()
+    public func disconnectFromDevice() -> Bool {
+        return dataSource.disconnectFromDevice()
     }
 
     // Imprimir dados com tamanho, alinhamento e opção de negrito

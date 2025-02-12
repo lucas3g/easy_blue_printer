@@ -8,6 +8,6 @@ public class DisconnectDeviceUseCase {
     }
 
     public func execute() -> Bool {
-        return repository.disconnectToDevice()
+        return repository.disconnectFromDevice()
     }
 }

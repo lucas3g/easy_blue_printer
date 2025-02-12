@@ -16,11 +16,11 @@ public class EasyBluePrinterPlugin: NSObject, FlutterPlugin {
             let devices = AppModule.scanDevicesUseCase.execute()
             let deviceList = devices.map { "\($0.name) (\($0.address))" }
             result(deviceList)
-            
+
         case "connectToDevice":
             // Retrieve address and connect to the device
             if let address = call.arguments as? [String: Any], let deviceAddress = address["address"] as? String {
-                let success = AppModule.connectDeviceUseCase.execute(deviceAddress)
+                let success = AppModule.connectDeviceUseCase.execute(address: deviceAddress)
                 result(success)
             } else {
                 result(FlutterError(code: "400", message: "Invalid arguments", details: nil))
@@ -30,10 +30,10 @@ public class EasyBluePrinterPlugin: NSObject, FlutterPlugin {
             // Print data with arguments: data, fontSize, textAlign, bold
             if let args = call.arguments as? [String: Any] {
                 if let data = args["data"] as? String,
-                   let fontSize = args["fontSize"] as? Int,
-                   let textAlign = args["textAlign"] as? Int,
-                   let bold = args["bold"] as? Bool {
-                    let success = AppModule.printUseCase.execute(data, fontSize, textAlign, bold)
+                let fontSize = args["fontSize"] as? Int,
+                let textAlign = args["textAlign"] as? Int,
+                let bold = args["bold"] as? Bool {
+                    let success = AppModule.printUseCase.execute(data: data, size: fontSize, align: textAlign, bold: bold)
                     result(success)
                 } else {
                     result(FlutterError(code: "400", message: "Invalid arguments", details: nil))
@@ -41,11 +41,11 @@ public class EasyBluePrinterPlugin: NSObject, FlutterPlugin {
             } else {
                 result(FlutterError(code: "400", message: "Invalid arguments", details: nil))
             }
-        
+
         case "printEmptyLine":
             // Feed empty lines with callTimes argument
             if let args = call.arguments as? [String: Any], let callTimes = args["callTimes"] as? Int {
-                let success = AppModule.feedLineUseCase.execute(callTimes)
+                let success = AppModule.feedLineUseCase.execute(callTimes: callTimes)
                 result(success)
             } else {
                 result(FlutterError(code: "400", message: "Invalid arguments", details: nil))
@@ -55,7 +55,7 @@ public class EasyBluePrinterPlugin: NSObject, FlutterPlugin {
             // Disconnect from device
             let success = AppModule.disconnectDeviceUseCase.execute()
             result(success)
-            
+
         default:
             result(FlutterMethodNotImplemented)
         }

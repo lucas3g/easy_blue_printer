@@ -1,5 +1,5 @@
 PODS:
-  - easy_blue_printer (0.0.1):
+  - easy_blue_printer (1.0.0):
     - Flutter
   - Flutter (1.0.0)
   - integration_test (0.0.1):
@@ -19,7 +19,7 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/integration_test/ios"
 
 SPEC CHECKSUMS:
-  easy_blue_printer: ca6f656b2a6e94521bf4857c318a19ebe3d808e5
+  easy_blue_printer: 71193bdafae78dd9b1ce07ab951bca66b5a7d5d8
   Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
   integration_test: 4a889634ef21a45d28d50d622cf412dc6d9f586e
 
