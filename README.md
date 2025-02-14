@@ -19,6 +19,32 @@ dependencies:
 
 2. Run `flutter pub get` to install the package.
 
+## Permissions
+
+### For Android
+To enable Bluetooth functionality on Android, you need to add the following permissions in your `AndroidManifest.xml`:
+
+```xml
+<uses-permission android:name="android.permission.BLUETOOTH"/>
+<uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
+<uses-permission android:name="android.permission.BLUETOOTH_CONNECT"/>
+<uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+```
+
+### For iOS
+For iOS, you need to add the following entries to your `Info.plist` file:
+
+```xml
+<key>NSBluetoothAlwaysUsageDescription</key>
+<string>O aplicativo precisa de acesso ao Bluetooth para conectar-se a dispositivos próximos.</string>
+<key>NSBluetoothPeripheralUsageDescription</key>
+<string>O aplicativo precisa acessar o Bluetooth para comunicação com dispositivos externos.</string>
+<key>NSBluetoothAlwaysUsageDescription</key>
+<string>O aplicativo usa Bluetooth para se conectar a dispositivos compatíveis.</string>
+<key>NSLocalNetworkUsageDescription</key>
+<string>O aplicativo precisa acessar a rede local para comunicação com dispositivos Bluetooth.</string>
+```
+
 ## Usage
 
 ### 1. **Import the Library**
