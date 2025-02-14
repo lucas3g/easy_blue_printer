@@ -50,4 +50,9 @@ class MethodChannelEasyBluePrinter extends EasyBluePrinterPlatform {
       'callTimes': callTimes,
     });
   }
+
+  @override
+  Future<bool> isConnected() async {
+    return await methodChannel.invokeMethod('isConnected');
+  }
 }

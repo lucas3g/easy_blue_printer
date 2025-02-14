@@ -40,4 +40,6 @@ abstract class EasyBluePrinterPlatform extends PlatformInterface {
   });
 
   Future<void> printEmptyLine({required int callTimes});
+
+  Future<bool> isConnected();
 }

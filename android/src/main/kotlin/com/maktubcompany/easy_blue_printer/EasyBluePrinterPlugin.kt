@@ -47,6 +47,7 @@ class EasyBluePrinterPlugin: FlutterPlugin, MethodCallHandler {
         }
       }
       "disconnectFromDevice" -> result.success(AppModule.disconnectDeviceUseCase.execute())
+      "isConnected" -> result.success(AppModule.isConnectedUseCase.execute())
       else -> {
         result.notImplemented()
       }

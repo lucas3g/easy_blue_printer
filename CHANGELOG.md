@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.0.3] - 2025-02-14
+### release
+- **Added**: Get device is connected.
+
 ## [1.0.2] - 2025-02-14
 ### release
 - **Added**: Sdk version.

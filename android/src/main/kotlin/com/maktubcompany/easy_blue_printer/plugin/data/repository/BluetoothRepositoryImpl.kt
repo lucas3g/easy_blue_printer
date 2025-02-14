@@ -27,4 +27,8 @@ class BluetoothRepositoryImpl(
     override fun printEmptyLine(callTimes: Int): Boolean {
        return dataSource.printEmptyLine(callTimes)
     }
+
+    override fun isConnected(): Boolean {
+        return dataSource.isConnected()
+    }
 }

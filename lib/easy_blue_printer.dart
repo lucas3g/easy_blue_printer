@@ -40,4 +40,8 @@ class EasyBluePrinter {
   Future<void> printEmptyLine({required int callTimes}) async {
     await EasyBluePrinterPlatform.instance.printEmptyLine(callTimes: callTimes);
   }
+
+  Future<bool> isConnected() async {
+    return await EasyBluePrinterPlatform.instance.isConnected();
+  }
 }

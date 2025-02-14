@@ -127,4 +127,8 @@ class BluetoothDataSource {
             false
         }
     }
+
+    fun isConnected(): Boolean {
+        return _socket?.isConnected == true
+    }
 }

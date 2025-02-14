@@ -8,4 +8,5 @@ interface BluetoothRepository {
     fun disconnectToDevice(): Boolean
     fun printData(data: String, size: Int, align: Int, bold: Boolean): Boolean
     fun printEmptyLine(callTimes: Int): Boolean
+    fun isConnected(): Boolean
 }
