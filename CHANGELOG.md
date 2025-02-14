@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.5] - 2025-02-14
+### release
+- **Added**: Fix version kotlin
+
+## [1.0.4] - 2025-02-14
+### release
+- **Added**: Added THREAD to the functions
+
 ## [1.0.3] - 2025-02-14
 ### release
 - **Added**: Get device is connected.
