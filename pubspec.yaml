@@ -5,8 +5,8 @@ repository: https://github.com/lucas3g/easy_blue_printer
 homepage: https://github.com/lucas3g/easy_blue_printer
 
 environment:
-  sdk: ">=3.5.0"
-  flutter: ">=3.0.0"
+  sdk: ">=3.5.0 <4.0.0"
+  flutter: '>=3.0.0 <4.0.0'
 
 dependencies:
   flutter:
