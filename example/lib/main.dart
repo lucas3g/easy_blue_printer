@@ -1,6 +1,5 @@
-import 'dart:async';
-
 import 'package:easy_blue_printer/easy_blue_printer.dart';
+import 'package:easy_blue_printer_example/bluetooth_controller.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -15,21 +14,18 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  final _easyBluePrinterPlugin = EasyBluePrinter();
+  final BluetoothController bluetoothController = BluetoothController();
 
-  final _devicesStream = StreamController<List<BluetoothDevice>>();
+  @override
+  void initState() {
+    super.initState();
+    bluetoothController.startScan(); // Inicia o scan ao carregar a tela
+  }
 
-  void _scanDevices() async {
-    try {
-      final List<BluetoothDevice> devices =
-          await _easyBluePrinterPlugin.scanDevices();
-
-      _devicesStream.add([]);
-
-      _devicesStream.add(devices);
-    } catch (e) {
-      print(e);
-    }
+  @override
+  void dispose() {
+    bluetoothController.stopScan(); // Para o scan quando a tela for descartada
+    super.dispose();
   }
 
   @override
@@ -44,74 +40,61 @@ class _MyAppState extends State<MyApp> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               StreamBuilder<List<BluetoothDevice>>(
-                stream: _devicesStream.stream,
+                stream: bluetoothController.devicesStream,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Center(child: const CircularProgressIndicator());
+                    return CircularProgressIndicator();
                   }
 
-                  if (snapshot.hasData) {
-                    final devices = snapshot.data;
+                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return Text('Nenhum dispositivo encontrado');
+                  }
 
-                    return Column(
-                      children: devices!.map((device) {
+                  return Expanded(
+                    child: ListView.builder(
+                      itemCount: snapshot.data!.length,
+                      itemBuilder: (context, index) {
+                        final device = snapshot.data![index];
+
                         return ListTile(
                           title: Text(device.name),
-                          subtitle: Text(
-                            device.address +
-                                (device.connected ? ' - Connected' : ''),
-                          ),
+                          subtitle:
+                              Text('${device.address} - ${device.connected}'),
                           onTap: () async {
-                            if (device.connected) {
-                              final disconnected = await _easyBluePrinterPlugin
-                                  .disconnectFromDevice();
-
-                              if (disconnected) {
-                                device.setConnected(false);
-
-                                setState(() {});
-                              }
-
-                              return;
-                            }
-
-                            final connected = await _easyBluePrinterPlugin
+                            final connected = await bluetoothController
                                 .connectToDevice(device);
 
-                            if (connected) {
-                              device.setConnected(true);
+                            device.setConnected(connected);
 
-                              setState(() {});
-                            }
+                            setState(() {});
                           },
                         );
-                      }).toList(),
-                    );
-                  }
-
-                  return const SizedBox();
+                      },
+                    ),
+                  );
                 },
-              ),
-              ElevatedButton(
-                onPressed: _scanDevices,
-                child: const Text('Scan Devices'),
-              ),
-              SizedBox(
-                height: 20,
               ),
               ElevatedButton(
                 onPressed: () async {
-                  await _easyBluePrinterPlugin.printData(
-                    data: 'Hello World',
+                  await bluetoothController.printData(
+                    data: 'Hello, World!',
                     fontSize: FS.normal,
                     textAlign: TA.center,
-                    bold: true,
+                    bold: false,
                   );
 
-                  await _easyBluePrinterPlugin.printEmptyLine(callTimes: 5);
+                  await bluetoothController.printEmptyLine(callTimes: 5);
                 },
-                child: const Text('Print Data'),
+                child: const Text('Imprimir'),
               ),
+              SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () async {
+                  await bluetoothController.disconnectFromDevice();
+                },
+                child: const Text('Desconectar'),
+              ),
+              SizedBox(height: 16),
             ],
           ),
         ),

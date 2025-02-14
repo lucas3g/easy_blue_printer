@@ -31,6 +31,7 @@ abstract class EasyBluePrinterPlatform extends PlatformInterface {
   Future<bool> connectToDevice(BluetoothDevice device);
 
   Future<bool> disconnectFromDevice();
+
   Future<bool> printData({
     required String data,
     required FS fontSize,
