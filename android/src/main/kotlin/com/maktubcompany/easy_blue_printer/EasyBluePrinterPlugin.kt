@@ -8,30 +8,27 @@ import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 import com.maktubcompany.easy_blue_printer.plugin.di.AppModule
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.launch
 
 /** EasyBluePrinterPlugin */
 class EasyBluePrinterPlugin: FlutterPlugin, MethodCallHandler {
   private lateinit var channel : MethodChannel
-  private val scope = MainScope() // Escopo de coroutine para o plugin
+
+  override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
+    channel = MethodChannel(flutterPluginBinding.binaryMessenger, "easy_blue_printer")
+    channel.setMethodCallHandler(this)
+  }
 
   override fun onMethodCall(call: MethodCall, result: Result) {
     when (call.method) {
       "scanDevices" -> {
-        scope.launch {
+        Thread {
           try {
-            val devices = withContext(Dispatchers.IO) {
-              AppModule.scanDevicesUseCase.execute().map { "${it.name} (${it.address})" }
-            }
+            val devices = AppModule.scanDevicesUseCase.execute().map { "${it.name} (${it.address})" }
             result.success(devices)
           } catch (e: Exception) {
             result.error("SCAN_ERROR", e.message, null)
           }
-        }
+        }.start()
       }
       "connectToDevice" -> {
         val address = call.argument<String>("address")
@@ -40,16 +37,14 @@ class EasyBluePrinterPlugin: FlutterPlugin, MethodCallHandler {
           return
         }
 
-        scope.launch {
+        Thread {
           try {
-            val connected = withContext(Dispatchers.IO) {
-              AppModule.connectDeviceUseCase.execute(address)
-            }
+            val connected = AppModule.connectDeviceUseCase.execute(address)
             result.success(connected)
           } catch (e: Exception) {
             result.error("CONNECTION_ERROR", e.message, null)
           }
-        }
+        }.start()
       }
       "printData" -> {
         val data = call.argument<String>("data")
@@ -62,16 +57,14 @@ class EasyBluePrinterPlugin: FlutterPlugin, MethodCallHandler {
           return
         }
 
-        scope.launch {
+        Thread {
           try {
-            val printed = withContext(Dispatchers.IO) {
-              AppModule.printUseCase.execute(data, fontSize, align, bold)
-            }
+            val printed = AppModule.printUseCase.execute(data, fontSize, align, bold)
             result.success(printed)
           } catch (e: Exception) {
             result.error("PRINT_ERROR", e.message, null)
           }
-        }
+        }.start()
       }
       "printEmptyLine" -> {
         val callTimes = call.argument<Int>("callTimes")
@@ -80,40 +73,34 @@ class EasyBluePrinterPlugin: FlutterPlugin, MethodCallHandler {
           return
         }
 
-        scope.launch {
+        Thread {
           try {
-            val printed = withContext(Dispatchers.IO) {
-              AppModule.feedLineUseCase.execute(callTimes)
-            }
+            val printed = AppModule.feedLineUseCase.execute(callTimes)
             result.success(printed)
           } catch (e: Exception) {
             result.error("PRINT_ERROR", e.message, null)
           }
-        }
+        }.start()
       }
       "disconnectFromDevice" -> {
-        scope.launch {
+        Thread {
           try {
-            val disconnected = withContext(Dispatchers.IO) {
-              AppModule.disconnectDeviceUseCase.execute()
-            }
+            val disconnected = AppModule.disconnectDeviceUseCase.execute()
             result.success(disconnected)
           } catch (e: Exception) {
             result.error("DISCONNECT_ERROR", e.message, null)
           }
-        }
+        }.start()
       }
       "isConnected" -> {
-        scope.launch {
+        Thread {
           try {
-            val connected = withContext(Dispatchers.IO) {
-              AppModule.isConnectedUseCase.execute()
-            }
+            val connected = AppModule.isConnectedUseCase.execute()
             result.success(connected)
           } catch (e: Exception) {
             result.error("CONNECTION_CHECK_ERROR", e.message, null)
           }
-        }
+        }.start()
       }
       else -> result.notImplemented()
     }
