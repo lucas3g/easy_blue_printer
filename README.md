@@ -53,156 +53,165 @@ To start using the **Easy Blue Printer** plugin, import the library:
 
 ```dart
 import 'package:easy_blue_printer/easy_blue_printer.dart';
+import 'package:easy_blue_printer_example/bluetooth_controller.dart';
+import 'package:flutter/material.dart';
 ```
 
-### 2. **Scanning Bluetooth Devices**
+### 2. **BluetoothController Implementation**
 
-To scan for nearby Bluetooth devices, use the `scanDevices` method. This will return a list of available devices.
+You can create a controller class (`BluetoothController`) to manage the scanning, connecting, and printing functionality:
 
 ```dart
-final _easyBluePrinterPlugin = EasyBluePrinter();
-final _devicesStream = StreamController<List<BluetoothDevice>>();
+class BluetoothController {
+  final EasyBluePrinter _easyBluePrinterPlugin = EasyBluePrinter();
+  final StreamController<List<BluetoothDevice>> _devicesStream =
+      StreamController<List<BluetoothDevice>>.broadcast();
 
-void _scanDevices() async {
-  try {
-    final List<BluetoothDevice> devices =
-        await _easyBluePrinterPlugin.scanDevices();
+  Stream<List<BluetoothDevice>> get devicesStream => _devicesStream.stream;
 
-    _devicesStream.add(devices);
-  } catch (e) {
-    print(e);
+  void startScan() {
+    _easyBluePrinterPlugin.scanDevices().then((devices) {
+      _devicesStream.add(devices);
+    });
+  }
+
+  void stopScan() {
+    _devicesStream.close();
+  }
+
+  Future<bool> connectToDevice(BluetoothDevice device) async {
+    return await _easyBluePrinterPlugin.connectToDevice(device);
+  }
+
+  Future<bool> disconnectFromDevice() async {
+    return await _easyBluePrinterPlugin.disconnectFromDevice();
+  }
+
+  Future<bool> printData({
+    required String data,
+    required FS fontSize,
+    required TA textAlign,
+    required bool bold,
+  }) async {
+    return await _easyBluePrinterPlugin.printData(
+      data: data,
+      fontSize: fontSize,
+      textAlign: textAlign,
+      bold: bold,
+    );
+  }
+
+  Future<void> printEmptyLine({required int callTimes}) async {
+    await _easyBluePrinterPlugin.printEmptyLine(callTimes: callTimes);
   }
 }
 ```
 
-### 3. **Displaying Devices**
+### 3. **Main Application**
 
-You can display a list of Bluetooth devices with their name, address, and connection status using a `StreamBuilder`:
-
-```dart
-StreamBuilder<List<BluetoothDevice>>(
-  stream: _devicesStream.stream,
-  builder: (context, snapshot) {
-    if (snapshot.connectionState == ConnectionState.waiting) {
-      return const CircularProgressIndicator();
-    }
-    
-    if (snapshot.hasData) {
-      final devices = snapshot.data;
-
-      return Column(
-        children: devices!.map((device) {
-          return ListTile(
-            title: Text(device.name),
-            subtitle: Text(device.address +
-                (device.connected ? ' - Connected' : '')),
-            onTap: () async {
-              // Connect or Disconnect from the device
-            },
-          );
-        }).toList(),
-      );
-    }
-
-    return const SizedBox();
-  },
-)
-```
-
-### 4. **Connecting to a Bluetooth Printer**
-
-When a user taps on a device in the list, you can connect or disconnect from the Bluetooth printer using the `connectToDevice` and `disconnectFromDevice` methods:
+The main application can use the `BluetoothController` to manage Bluetooth devices, scan for them, and send print commands. Here's an example of the main app structure:
 
 ```dart
-final connected = await _easyBluePrinterPlugin.connectToDevice(device);
-if (connected) {
-  device.setConnected(true);
-  setState(() {});
+void main() {
+  runApp(const MyApp());
 }
-```
 
-```dart
-final disconnected = await _easyBluePrinterPlugin.disconnectFromDevice();
-if (disconnected) {
-  device.setConnected(false);
-  setState(() {});
+class MyApp extends StatefulWidget {
+  const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
 }
-```
 
-### 5. **Printing Data**
+class _MyAppState extends State<MyApp> {
+  final BluetoothController bluetoothController = BluetoothController();
 
-Once connected, you can print text data using the `printData` method:
+  @override
+  void initState() {
+    super.initState();
+    bluetoothController.startScan(); // Start scanning when the screen is loaded
+  }
 
-```dart
-await _easyBluePrinterPlugin.printData(
-  data: 'Hello World',
-  fontSize: FS.normal,
-  textAlign: TA.center,
-  bold: true,
-);
-await _easyBluePrinterPlugin.printEmptyLine(callTimes: 5);
-```
+  @override
+  void dispose() {
+    bluetoothController.stopScan(); // Stop scanning when the screen is discarded
+    super.dispose();
+  }
 
-### 6. **Buttons to Scan and Print**
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Scaffold(
+        appBar: AppBar(
+          title: const Text('Easy Blue Printer Example'),
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              StreamBuilder<List<BluetoothDevice>>(
+                stream: bluetoothController.devicesStream,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return CircularProgressIndicator();
+                  }
 
-In the UI, you can use buttons to trigger device scanning and printing functionality:
+                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return Text('Nenhum dispositivo encontrado');
+                  }
 
-```dart
-ElevatedButton(
-  onPressed: _scanDevices,
-  child: const Text('Scan Devices'),
-)
+                  return Expanded(
+                    child: ListView.builder(
+                      itemCount: snapshot.data!.length,
+                      itemBuilder: (context, index) {
+                        final device = snapshot.data![index];
 
-ElevatedButton(
-  onPressed: () async {
-    await _easyBluePrinterPlugin.printData(
-      data: 'Hello World',
-      fontSize: FS.normal,
-      textAlign: TA.center,
-      bold: true,
-    );
-    await _easyBluePrinterPlugin.printEmptyLine(callTimes: 5);
-  },
-  child: const Text('Print Data'),
-)
-```
+                        return ListTile(
+                          title: Text(device.name),
+                          subtitle:
+                              Text('${device.address} - ${device.connected}'),
+                          onTap: () async {
+                            final connected = await bluetoothController
+                                .connectToDevice(device);
 
-## Example UI
+                            device.setConnected(connected);
 
-Here is a simple UI that integrates scanning, connecting, and printing functionality:
+                            setState(() {});
+                          },
+                        );
+                      },
+                    ),
+                  );
+                },
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  await bluetoothController.printData(
+                    data: 'Hello, World!',
+                    fontSize: FS.normal,
+                    textAlign: TA.center,
+                    bold: false,
+                  );
 
-```dart
-MaterialApp(
-  home: Scaffold(
-    appBar: AppBar(
-      title: const Text('Easy Blue Printer Example'),
-    ),
-    body: Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          // StreamBuilder to display the list of Bluetooth devices
-          StreamBuilder<List<BluetoothDevice>>(
-            stream: _devicesStream.stream,
-            builder: (context, snapshot) {
-              // Handle connection state and display devices
-            },
+                  await bluetoothController.printEmptyLine(callTimes: 5);
+                },
+                child: const Text('Imprimir'),
+              ),
+              SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () async {
+                  await bluetoothController.disconnectFromDevice();
+                },
+                child: const Text('Desconectar'),
+              ),
+              SizedBox(height: 16),
+            ],
           ),
-          ElevatedButton(
-            onPressed: _scanDevices,
-            child: const Text('Scan Devices'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              // Trigger the print functionality
-            },
-            child: const Text('Print Data'),
-          ),
-        ],
+        ),
       ),
-    ),
-  ),
-)
+    );
+  }
+}
 ```
 
 ## License
