@@ -53,8 +53,6 @@ To start using the **Easy Blue Printer** plugin, import the library:
 
 ```dart
 import 'package:easy_blue_printer/easy_blue_printer.dart';
-import 'package:easy_blue_printer_example/bluetooth_controller.dart';
-import 'package:flutter/material.dart';
 ```
 
 ### 2. **BluetoothController Implementation**
