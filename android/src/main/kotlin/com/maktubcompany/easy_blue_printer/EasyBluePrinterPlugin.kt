@@ -20,31 +20,10 @@ class EasyBluePrinterPlugin: FlutterPlugin, MethodCallHandler {
 
   override fun onMethodCall(call: MethodCall, result: Result) {
     when (call.method) {
-      "scanDevices" -> {
-        Thread {
-          try {
-            val devices = AppModule.scanDevicesUseCase.execute().map { "${it.name} (${it.address})" }
-            result.success(devices)
-          } catch (e: Exception) {
-            result.error("SCAN_ERROR", e.message, null)
-          }
-        }.start()
-      }
+      "scanDevices" -> result.success(AppModule.scanDevicesUseCase.execute().map { "${it.name} (${it.address})" })
       "connectToDevice" -> {
         val address = call.argument<String>("address")
-        if (address == null) {
-          result.error("400", "Address is required", null)
-          return
-        }
-
-        Thread {
-          try {
-            val connected = AppModule.connectDeviceUseCase.execute(address)
-            result.success(connected)
-          } catch (e: Exception) {
-            result.error("CONNECTION_ERROR", e.message, null)
-          }
-        }.start()
+        result.success(address?.let { AppModule.connectDeviceUseCase.execute(it) })
       }
       "printData" -> {
         val data = call.argument<String>("data")
@@ -52,57 +31,26 @@ class EasyBluePrinterPlugin: FlutterPlugin, MethodCallHandler {
         val align = call.argument<Int>("textAlign")
         val bold = call.argument<Boolean>("bold")
 
-        if (data == null || fontSize == null || align == null || bold == null) {
+        if (data != null && fontSize != null && align != null && bold != null) {
+          result.success(AppModule.printUseCase.execute(data, fontSize, align, bold))
+        } else {
           result.error("400", "Invalid arguments", null)
-          return
         }
-
-        Thread {
-          try {
-            val printed = AppModule.printUseCase.execute(data, fontSize, align, bold)
-            result.success(printed)
-          } catch (e: Exception) {
-            result.error("PRINT_ERROR", e.message, null)
-          }
-        }.start()
       }
       "printEmptyLine" -> {
         val callTimes = call.argument<Int>("callTimes")
-        if (callTimes == null) {
-          result.error("400", "Invalid arguments", null)
-          return
-        }
 
-        Thread {
-          try {
-            val printed = AppModule.feedLineUseCase.execute(callTimes)
-            result.success(printed)
-          } catch (e: Exception) {
-            result.error("PRINT_ERROR", e.message, null)
-          }
-        }.start()
+        if (callTimes != null) {
+          result.success(AppModule.feedLineUseCase.execute(callTimes))
+        } else {
+          result.error("400", "Invalid arguments", null)
+        }
       }
-      "disconnectFromDevice" -> {
-        Thread {
-          try {
-            val disconnected = AppModule.disconnectDeviceUseCase.execute()
-            result.success(disconnected)
-          } catch (e: Exception) {
-            result.error("DISCONNECT_ERROR", e.message, null)
-          }
-        }.start()
+      "disconnectFromDevice" -> result.success(AppModule.disconnectDeviceUseCase.execute())
+      "isConnected" -> result.success(AppModule.isConnectedUseCase.execute())
+      else -> {
+        result.notImplemented()
       }
-      "isConnected" -> {
-        Thread {
-          try {
-            val connected = AppModule.isConnectedUseCase.execute()
-            result.success(connected)
-          } catch (e: Exception) {
-            result.error("CONNECTION_CHECK_ERROR", e.message, null)
-          }
-        }.start()
-      }
-      else -> result.notImplemented()
     }
   }
 
