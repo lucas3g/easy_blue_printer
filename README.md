@@ -198,8 +198,3 @@ If you want to contribute to improving `easy_blue_printer`, feel free to open a 
 This project is distributed under the MIT license. For more details, see the `LICENSE` file.
 
 ---
-
-## Versão em Português
-
-Para a versão em português do README, acesse o arquivo `README_PT.md` no repositório.
-
