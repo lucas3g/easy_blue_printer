@@ -1,6 +1,6 @@
 name: easy_blue_printer
 description: "The **Easy Blue Printer** plugin allows seamless integration of Bluetooth printers in a Flutter app, enabling the scanning, connection, and printing functionality."
-version: 1.1.1
+version: 1.1.2
 repository: https://github.com/lucas3g/easy_blue_printer
 homepage: https://github.com/lucas3g/easy_blue_printer
 
@@ -42,9 +42,6 @@ flutter:
         pluginClass: EasyBluePrinterPlugin
 
   # To add assets to your plugin package, add an assets section, like this:
-  # assets:
-  #   - images/a_dot_burr.jpeg
-  #   - images/a_dot_ham.jpeg
   #
   # For details regarding assets in packages, see
   # https://flutter.dev/to/asset-from-package

@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:easy_blue_printer/domain/entities/bluetooth_device.dart';
 import 'package:easy_blue_printer/domain/enums/font_size.dart';
 import 'package:easy_blue_printer/domain/enums/text_align.dart';
@@ -42,4 +44,6 @@ abstract class EasyBluePrinterPlatform extends PlatformInterface {
   Future<void> printEmptyLine({required int callTimes});
 
   Future<bool> isConnected();
+
+  Future<bool> printImage({required Uint8List bytes});
 }

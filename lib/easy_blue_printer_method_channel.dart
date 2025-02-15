@@ -55,4 +55,11 @@ class MethodChannelEasyBluePrinter extends EasyBluePrinterPlatform {
   Future<bool> isConnected() async {
     return await methodChannel.invokeMethod('isConnected');
   }
+
+  @override
+  Future<bool> printImage({required Uint8List bytes}) async {
+    return await methodChannel.invokeMethod('printImage', {
+      'data': bytes,
+    });
+  }
 }

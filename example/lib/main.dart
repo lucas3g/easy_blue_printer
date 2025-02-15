@@ -95,6 +95,14 @@ class _MyAppState extends State<MyApp> {
                 child: const Text('Desconectar'),
               ),
               SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () async {
+                  await bluetoothController.printImage(
+                    path: 'assets/images/gremio.png',
+                  );
+                },
+                child: const Text('Imprimir imagem'),
+              ),
             ],
           ),
         ),

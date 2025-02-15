@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:easy_blue_printer/easy_blue_printer.dart';
+import 'package:flutter/services.dart';
 
 class BluetoothController {
   final EasyBluePrinter _easyBluePrinterPlugin = EasyBluePrinter();
@@ -44,5 +45,16 @@ class BluetoothController {
 
   Future<void> printEmptyLine({required int callTimes}) async {
     await _easyBluePrinterPlugin.printEmptyLine(callTimes: callTimes);
+  }
+
+  Future<bool> isConnected() async {
+    return await _easyBluePrinterPlugin.isConnected();
+  }
+
+  Future<bool> printImage({required String path}) async {
+    final bytes =
+        await rootBundle.load(path).then((value) => value.buffer.asUint8List());
+
+    return await _easyBluePrinterPlugin.printImage(bytes: bytes);
   }
 }

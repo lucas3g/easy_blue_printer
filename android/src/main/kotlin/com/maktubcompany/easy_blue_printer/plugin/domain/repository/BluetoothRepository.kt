@@ -9,4 +9,5 @@ interface BluetoothRepository {
     fun printData(data: String, size: Int, align: Int, bold: Boolean): Boolean
     fun printEmptyLine(callTimes: Int): Boolean
     fun isConnected(): Boolean
+    fun printImage(data: ByteArray, align: Int): Boolean
 }

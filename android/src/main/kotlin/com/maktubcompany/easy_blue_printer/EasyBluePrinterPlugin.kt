@@ -102,6 +102,24 @@ class EasyBluePrinterPlugin: FlutterPlugin, MethodCallHandler {
           }
         }.start()
       }
+      "printImage" -> {
+          val data = call.argument<ByteArray>("data")
+          val align = call.argument<Int>("textAlign")
+
+          if (data == null || align == null) {
+            result.error("400", "Invalid arguments", null)
+            return
+          }
+
+          Thread {
+            try {
+                val printed = AppModule.printImageUseCase.execute(data, align)
+                result.success(printed)
+            } catch (e: Exception) {
+                result.error("PRINT_ERROR", e.message, null)
+            }
+          }.start()
+        }
       else -> result.notImplemented()
     }
   }

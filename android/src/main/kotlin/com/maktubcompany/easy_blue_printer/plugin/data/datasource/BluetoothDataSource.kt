@@ -1,11 +1,14 @@
 package com.maktubcompany.easy_blue_printer.plugin.data.datasource
 
-import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothSocket
+import android.graphics.BitmapFactory
+import android.util.Log
 import com.maktubcompany.easy_blue_printer.plugin.domain.entities.BluetoothDeviceEntity
+import com.maktubcompany.easy_blue_printer.plugin.utils.Utils
 import java.io.IOException
 import java.util.UUID
+
 
 class BluetoothDataSource {
     private val bluetoothAdapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
@@ -129,5 +132,39 @@ class BluetoothDataSource {
 
     fun isConnected(): Boolean {
         return _socket?.isConnected == true
+    }
+
+    fun printImage(data: ByteArray, align: Int): Boolean {
+        return try {
+            var bmp = BitmapFactory.decodeByteArray(data, 0, data.size)
+
+            if (bmp != null) {
+
+                val paperWidth = 384
+                bmp = Utils.scaleBitmapToWidth(bmp, paperWidth)
+
+                val command: ByteArray = Utils.decodeBitmap(bmp) ?: return false
+
+                val leftAlign = byteArrayOf(0x1B, 0x61, 0x00)
+                val centerAlign = byteArrayOf(0x1B, 0x61, 0x01)
+                val rightAlign = byteArrayOf(0x1B, 0x61, 0x02)
+
+                when (align) {
+                    0 -> _socket?.outputStream?.write(leftAlign)
+                    1 -> _socket?.outputStream?.write(centerAlign)
+                    2 -> _socket?.outputStream?.write(rightAlign)
+                }
+
+                _socket?.outputStream?.write(command)
+
+                true
+            } else {
+                Log.e("Print Photo error", "The file doesn't exist")
+                false
+            }
+        } catch (e: IOException) {
+            e.printStackTrace()
+            false
+        }
     }
 }

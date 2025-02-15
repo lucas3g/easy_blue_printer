@@ -31,4 +31,8 @@ class BluetoothRepositoryImpl(
     override fun isConnected(): Boolean {
         return dataSource.isConnected()
     }
+
+    override fun printImage(data: ByteArray, align: Int): Boolean {
+        return dataSource.printImage(data, align)
+    }
 }

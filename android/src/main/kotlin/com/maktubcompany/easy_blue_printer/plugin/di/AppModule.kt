@@ -9,6 +9,7 @@ import com.maktubcompany.easy_blue_printer.plugin.domain.usecase.DisconnectDevic
 import com.maktubcompany.easy_blue_printer.plugin.domain.usecase.FeedLineUseCase
 import com.maktubcompany.easy_blue_printer.plugin.domain.usecase.PrintUseCase
 import com.maktubcompany.easy_blue_printer.plugin.domain.usecase.GetPairedDevices
+import com.maktubcompany.easy_blue_printer.plugin.domain.usecase.PrintImageUseCase
 
 object AppModule {
     private val bluetoothDataSource = BluetoothDataSource()
@@ -20,4 +21,5 @@ object AppModule {
     val disconnectDeviceUseCase = DisconnectDeviceUseCase(bluetoothRepository)
     val feedLineUseCase = FeedLineUseCase(bluetoothRepository)
     val isConnectedUseCase = DeviceIsConneceted(bluetoothRepository)
+    val printImageUseCase = PrintImageUseCase(bluetoothRepository)
 }
