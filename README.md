@@ -1,26 +1,26 @@
 # Easy Blue Printer
 
-## Descrição
-O `easy_blue_printer` é um pacote Flutter que facilita a conexão com impressoras Bluetooth para impressão de textos formatados. Este exemplo demonstra como utilizar o pacote para listar dispositivos Bluetooth pareados, conectar-se a uma impressora e imprimir textos.
+## Description
+The `easy_blue_printer` is a Flutter package that simplifies connecting to Bluetooth printers for formatted text printing. This example demonstrates how to use the package to list paired Bluetooth devices, connect to a printer, and print text.
 
 ---
 
-## Instalação
-Adicione a dependência ao seu arquivo `pubspec.yaml`:
+## Installation
+Add the dependency to your `pubspec.yaml` file:
 
 ```yaml
 dependencies:
   easy_blue_printer: latest_version
 ```
 
-Substitua `latest_version` pela versão mais recente do pacote.
+Replace `latest_version` with the latest version of the package.
 
 ---
 
-## Uso
+## Usage
 
-### 1. Configurando o Bluetooth Controller
-Crie uma classe `BluetoothController` para gerenciar a conexão Bluetooth e a impressão.
+### 1. Setting Up the Bluetooth Controller
+Create a `BluetoothController` class to manage Bluetooth connections and printing.
 
 ```dart
 import 'dart:async';
@@ -73,8 +73,8 @@ class BluetoothController {
 
 ---
 
-### 2. Criando a Interface do Usuário
-Agora, criamos um aplicativo Flutter que permite listar dispositivos Bluetooth, conectar-se a uma impressora e enviar textos para impressão.
+### 2. Creating the User Interface
+Now, create a Flutter application that allows listing Bluetooth devices, connecting to a printer, and sending text for printing.
 
 ```dart
 import 'package:flutter/material.dart';
@@ -126,7 +126,7 @@ class _MyAppState extends State<MyApp> {
                   }
 
                   if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return Text('Nenhum dispositivo encontrado');
+                    return Text('No devices found');
                   }
 
                   return Expanded(
@@ -159,14 +159,14 @@ class _MyAppState extends State<MyApp> {
                   );
                   await bluetoothController.printEmptyLine(callTimes: 5);
                 },
-                child: const Text('Imprimir'),
+                child: const Text('Print'),
               ),
               SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () async {
                   await bluetoothController.disconnectFromDevice();
                 },
-                child: const Text('Desconectar'),
+                child: const Text('Disconnect'),
               ),
               SizedBox(height: 16),
             ],
@@ -180,20 +180,26 @@ class _MyAppState extends State<MyApp> {
 
 ---
 
-## Funcionalidades
-- Listar dispositivos Bluetooth pareados.
-- Conectar-se a uma impressora Bluetooth.
-- Enviar textos para impressão com diferentes tamanhos e alinhamentos.
-- Imprimir linhas em branco.
-- Desconectar-se da impressora.
+## Features
+- List paired Bluetooth devices.
+- Connect to a Bluetooth printer.
+- Send formatted text for printing.
+- Print blank lines.
+- Disconnect from the printer.
 
 ---
 
-## Contribuição
-Se você deseja contribuir com melhorias para o `easy_blue_printer`, fique à vontade para abrir um PR ou relatar problemas no repositório.
+## Contribution
+If you want to contribute to improving `easy_blue_printer`, feel free to open a PR or report issues on the repository.
 
 ---
 
-## Licença
-Este projeto é distribuído sob a licença MIT. Para mais detalhes, consulte o arquivo `LICENSE`.
+## License
+This project is distributed under the MIT license. For more details, see the `LICENSE` file.
+
+---
+
+## Versão em Português
+
+Para a versão em português do README, acesse o arquivo `README_PT.md` no repositório.
 
