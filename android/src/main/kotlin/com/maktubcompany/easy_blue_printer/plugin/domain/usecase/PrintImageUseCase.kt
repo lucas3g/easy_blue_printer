@@ -5,6 +5,6 @@ import com.maktubcompany.easy_blue_printer.plugin.domain.repository.BluetoothRep
 
 class PrintImageUseCase(private val repository: BluetoothRepository) {
     fun execute(data: ByteArray, align: Int): Boolean {
-        return repository.printImage(data)
+        return repository.printImage(data, align)
     }
 }
