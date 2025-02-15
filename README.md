@@ -1,65 +1,31 @@
 # Easy Blue Printer
 
-The **Easy Blue Printer** plugin allows seamless integration of Bluetooth printers in a Flutter app, enabling the scanning, connection, and printing functionality.
+## Descrição
+O `easy_blue_printer` é um pacote Flutter que facilita a conexão com impressoras Bluetooth para impressão de textos formatados. Este exemplo demonstra como utilizar o pacote para listar dispositivos Bluetooth pareados, conectar-se a uma impressora e imprimir textos.
 
-## Features
-- Scan nearby Bluetooth devices.
-- Connect and disconnect from Bluetooth printers.
-- Print text data with configurable options such as font size, alignment, and bold text.
-- Print empty lines for formatting.
+---
 
-## Installation
-
-1. Add `easy_blue_printer` to your `pubspec.yaml` file:
+## Instalação
+Adicione a dependência ao seu arquivo `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  easy_blue_printer: ^latest_version
+  easy_blue_printer: latest_version
 ```
 
-2. Run `flutter pub get` to install the package.
+Substitua `latest_version` pela versão mais recente do pacote.
 
-## Permissions
+---
 
-### For Android
-To enable Bluetooth functionality on Android, you need to add the following permissions in your `AndroidManifest.xml`:
+## Uso
 
-```xml
-<uses-permission android:name="android.permission.BLUETOOTH"/>
-<uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
-<uses-permission android:name="android.permission.BLUETOOTH_CONNECT"/>
-<uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
-```
-
-### For iOS
-For iOS, you need to add the following entries to your `Info.plist` file:
-
-```xml
-<key>NSBluetoothAlwaysUsageDescription</key>
-<string>O aplicativo precisa de acesso ao Bluetooth para conectar-se a dispositivos próximos.</string>
-<key>NSBluetoothPeripheralUsageDescription</key>
-<string>O aplicativo precisa acessar o Bluetooth para comunicação com dispositivos externos.</string>
-<key>NSBluetoothAlwaysUsageDescription</key>
-<string>O aplicativo usa Bluetooth para se conectar a dispositivos compatíveis.</string>
-<key>NSLocalNetworkUsageDescription</key>
-<string>O aplicativo precisa acessar a rede local para comunicação com dispositivos Bluetooth.</string>
-```
-
-## Usage
-
-### 1. **Import the Library**
-
-To start using the **Easy Blue Printer** plugin, import the library:
+### 1. Configurando o Bluetooth Controller
+Crie uma classe `BluetoothController` para gerenciar a conexão Bluetooth e a impressão.
 
 ```dart
+import 'dart:async';
 import 'package:easy_blue_printer/easy_blue_printer.dart';
-```
 
-### 2. **BluetoothController Implementation**
-
-You can create a controller class (`BluetoothController`) to manage the scanning, connecting, and printing functionality:
-
-```dart
 class BluetoothController {
   final EasyBluePrinter _easyBluePrinterPlugin = EasyBluePrinter();
   final StreamController<List<BluetoothDevice>> _devicesStream =
@@ -68,7 +34,7 @@ class BluetoothController {
   Stream<List<BluetoothDevice>> get devicesStream => _devicesStream.stream;
 
   void startScan() {
-    _easyBluePrinterPlugin.scanDevices().then((devices) {
+    _easyBluePrinterPlugin.getPairedDevices().then((devices) {
       _devicesStream.add(devices);
     });
   }
@@ -105,11 +71,16 @@ class BluetoothController {
 }
 ```
 
-### 3. **Main Application**
+---
 
-The main application can use the `BluetoothController` to manage Bluetooth devices, scan for them, and send print commands. Here's an example of the main app structure:
+### 2. Criando a Interface do Usuário
+Agora, criamos um aplicativo Flutter que permite listar dispositivos Bluetooth, conectar-se a uma impressora e enviar textos para impressão.
 
 ```dart
+import 'package:flutter/material.dart';
+import 'package:easy_blue_printer/easy_blue_printer.dart';
+import 'bluetooth_controller.dart';
+
 void main() {
   runApp(const MyApp());
 }
@@ -127,12 +98,12 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    bluetoothController.startScan(); // Start scanning when the screen is loaded
+    bluetoothController.startScan();
   }
 
   @override
   void dispose() {
-    bluetoothController.stopScan(); // Stop scanning when the screen is discarded
+    bluetoothController.stopScan();
     super.dispose();
   }
 
@@ -166,14 +137,10 @@ class _MyAppState extends State<MyApp> {
 
                         return ListTile(
                           title: Text(device.name),
-                          subtitle:
-                              Text('${device.address} - ${device.connected}'),
+                          subtitle: Text('${device.address} - ${device.connected}'),
                           onTap: () async {
-                            final connected = await bluetoothController
-                                .connectToDevice(device);
-
+                            final connected = await bluetoothController.connectToDevice(device);
                             device.setConnected(connected);
-
                             setState(() {});
                           },
                         );
@@ -190,7 +157,6 @@ class _MyAppState extends State<MyApp> {
                     textAlign: TA.center,
                     bold: false,
                   );
-
                   await bluetoothController.printEmptyLine(callTimes: 5);
                 },
                 child: const Text('Imprimir'),
@@ -212,10 +178,22 @@ class _MyAppState extends State<MyApp> {
 }
 ```
 
-## License
+---
 
-This project is licensed under the MIT License.
+## Funcionalidades
+- Listar dispositivos Bluetooth pareados.
+- Conectar-se a uma impressora Bluetooth.
+- Enviar textos para impressão com diferentes tamanhos e alinhamentos.
+- Imprimir linhas em branco.
+- Desconectar-se da impressora.
 
 ---
 
-With **Easy Blue Printer**, integrating Bluetooth printers into your Flutter app is simple and efficient. Enjoy printing directly from your mobile device with just a few lines of code!
+## Contribuição
+Se você deseja contribuir com melhorias para o `easy_blue_printer`, fique à vontade para abrir um PR ou relatar problemas no repositório.
+
+---
+
+## Licença
+Este projeto é distribuído sob a licença MIT. Para mais detalhes, consulte o arquivo `LICENSE`.
+
