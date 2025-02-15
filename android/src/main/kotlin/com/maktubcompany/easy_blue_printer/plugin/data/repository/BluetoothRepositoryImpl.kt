@@ -8,8 +8,8 @@ class BluetoothRepositoryImpl(
     private val dataSource: BluetoothDataSource
 ) : BluetoothRepository {
 
-    override fun scanDevices(): List<BluetoothDeviceEntity> {
-        return dataSource.scanDevices()
+    override fun getPairedDevices(): List<BluetoothDeviceEntity> {
+        return dataSource.getPairedDevices()
     }
 
     override fun connectToDevice(address: String): Boolean {

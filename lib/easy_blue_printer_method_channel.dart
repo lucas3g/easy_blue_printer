@@ -12,8 +12,8 @@ class MethodChannelEasyBluePrinter extends EasyBluePrinterPlatform {
   final methodChannel = const MethodChannel('easy_blue_printer');
 
   @override
-  Future<List<BluetoothDevice>> scanDevices() async {
-    final rawDevices = await methodChannel.invokeMethod('scanDevices');
+  Future<List<BluetoothDevice>> getPairedDevices() async {
+    final rawDevices = await methodChannel.invokeMethod('getPairedDevices');
 
     return BluetoothDevice.parseDevices(rawDevices.cast<String>());
   }

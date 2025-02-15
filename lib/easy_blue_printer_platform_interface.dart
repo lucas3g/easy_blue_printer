@@ -26,7 +26,7 @@ abstract class EasyBluePrinterPlatform extends PlatformInterface {
     _instance = instance;
   }
 
-  Future<List<BluetoothDevice>> scanDevices();
+  Future<List<BluetoothDevice>> getPairedDevices();
 
   Future<bool> connectToDevice(BluetoothDevice device);
 

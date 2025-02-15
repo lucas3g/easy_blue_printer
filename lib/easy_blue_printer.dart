@@ -11,8 +11,8 @@ export 'domain/enums/font_size.dart';
 export 'domain/enums/text_align.dart';
 
 class EasyBluePrinter {
-  Future<List<BluetoothDevice>> scanDevices() async {
-    return await EasyBluePrinterPlatform.instance.scanDevices();
+  Future<List<BluetoothDevice>> getPairedDevices() async {
+    return await EasyBluePrinterPlatform.instance.getPairedDevices();
   }
 
   Future<bool> connectToDevice(BluetoothDevice device) async {

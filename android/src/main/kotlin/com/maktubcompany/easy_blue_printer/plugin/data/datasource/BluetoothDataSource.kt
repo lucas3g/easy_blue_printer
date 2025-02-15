@@ -14,7 +14,7 @@ class BluetoothDataSource {
     private var _socket: BluetoothSocket? = null
 
     @SuppressLint("MissingPermission")
-    fun scanDevices(): List<BluetoothDeviceEntity> {
+    fun getPairedDevices(): List<BluetoothDeviceEntity> {
         return bluetoothAdapter?.bondedDevices?.map {
             BluetoothDeviceEntity(it.name, it.address)
         } ?: emptyList()

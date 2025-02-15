@@ -11,7 +11,7 @@ class BluetoothController {
   Stream<List<BluetoothDevice>> get devicesStream => _devicesStream.stream;
 
   void startScan() {
-    _easyBluePrinterPlugin.scanDevices().then((devices) {
+    _easyBluePrinterPlugin.getPairedDevices().then((devices) {
       _devicesStream.add(devices);
     });
   }

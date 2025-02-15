@@ -8,13 +8,13 @@ import com.maktubcompany.easy_blue_printer.plugin.domain.usecase.DeviceIsConnece
 import com.maktubcompany.easy_blue_printer.plugin.domain.usecase.DisconnectDeviceUseCase
 import com.maktubcompany.easy_blue_printer.plugin.domain.usecase.FeedLineUseCase
 import com.maktubcompany.easy_blue_printer.plugin.domain.usecase.PrintUseCase
-import com.maktubcompany.easy_blue_printer.plugin.domain.usecase.ScanDevicesUseCase
+import com.maktubcompany.easy_blue_printer.plugin.domain.usecase.GetPairedDevices
 
 object AppModule {
     private val bluetoothDataSource = BluetoothDataSource()
     private val bluetoothRepository: BluetoothRepository = BluetoothRepositoryImpl(bluetoothDataSource)
 
-    val scanDevicesUseCase = ScanDevicesUseCase(bluetoothRepository)
+    val getPairedDevices = GetPairedDevices(bluetoothRepository)
     val connectDeviceUseCase = ConnectDeviceUseCase(bluetoothRepository)
     val printUseCase = PrintUseCase(bluetoothRepository)
     val disconnectDeviceUseCase = DisconnectDeviceUseCase(bluetoothRepository)

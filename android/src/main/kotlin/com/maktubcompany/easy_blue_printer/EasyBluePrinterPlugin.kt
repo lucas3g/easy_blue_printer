@@ -6,7 +6,6 @@ import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
-import io.flutter.plugin.common.MethodChannel.Result
 import com.maktubcompany.easy_blue_printer.plugin.di.AppModule
 
 /** EasyBluePrinterPlugin */
@@ -20,10 +19,10 @@ class EasyBluePrinterPlugin: FlutterPlugin, MethodCallHandler {
 
   override fun onMethodCall(call: MethodCall, result: Result) {
     when (call.method) {
-      "scanDevices" -> {
+      "getPairedDevices" -> {
         Thread {
           try {
-            val devices = AppModule.scanDevicesUseCase.execute().map { "${it.name} (${it.address})" }
+            val devices = AppModule.getPairedDevices.execute().map { "${it.name} (${it.address})" }
             result.success(devices)
           } catch (e: Exception) {
             result.error("SCAN_ERROR", e.message, null)
