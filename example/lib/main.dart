@@ -99,6 +99,7 @@ class _MyAppState extends State<MyApp> {
                 onPressed: () async {
                   await bluetoothController.printImage(
                     path: 'assets/images/gremio.png',
+                    textAlign: TA.center,
                   );
                 },
                 child: const Text('Imprimir imagem'),

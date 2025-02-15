@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.1.3] - 2025-02-15
+### release
+- **Added**: Fixed Print Image
+
 ## [1.1.2] - 2025-02-15
 ### release
 - **Added**: Function Print Image

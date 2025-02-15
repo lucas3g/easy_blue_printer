@@ -57,9 +57,11 @@ class MethodChannelEasyBluePrinter extends EasyBluePrinterPlatform {
   }
 
   @override
-  Future<bool> printImage({required Uint8List bytes}) async {
+  Future<bool> printImage(
+      {required Uint8List bytes, required TA textAlign}) async {
     return await methodChannel.invokeMethod('printImage', {
       'data': bytes,
+      'textAlign': textAlign.index,
     });
   }
 }

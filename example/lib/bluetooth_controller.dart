@@ -51,10 +51,11 @@ class BluetoothController {
     return await _easyBluePrinterPlugin.isConnected();
   }
 
-  Future<bool> printImage({required String path}) async {
+  Future<bool> printImage({required String path, required TA textAlign}) async {
     final bytes =
         await rootBundle.load(path).then((value) => value.buffer.asUint8List());
 
-    return await _easyBluePrinterPlugin.printImage(bytes: bytes);
+    return await _easyBluePrinterPlugin.printImage(
+        bytes: bytes, textAlign: textAlign);
   }
 }

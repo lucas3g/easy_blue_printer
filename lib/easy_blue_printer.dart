@@ -47,7 +47,11 @@ class EasyBluePrinter {
     return await EasyBluePrinterPlatform.instance.isConnected();
   }
 
-  Future<bool> printImage({required Uint8List bytes}) async {
-    return await EasyBluePrinterPlatform.instance.printImage(bytes: bytes);
+  Future<bool> printImage(
+      {required Uint8List bytes, required TA textAlign}) async {
+    return await EasyBluePrinterPlatform.instance.printImage(
+      bytes: bytes,
+      textAlign: textAlign,
+    );
   }
 }
