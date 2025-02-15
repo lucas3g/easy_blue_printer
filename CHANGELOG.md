@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.0.7] - 2025-02-14
+### release
+- **Added**: Fixed crash
+
 ## [1.0.6] - 2025-02-14
 ### release
 - **Added**: Fixed name function => scanDevices to getPairedDevices
