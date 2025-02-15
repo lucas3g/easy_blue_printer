@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.0.6] - 2025-02-14
+### release
+- **Added**: Fixed name function => scanDevices to getPairedDevices
+
 ## [1.0.5] - 2025-02-14
 ### release
 - **Added**: Fix version kotlin
