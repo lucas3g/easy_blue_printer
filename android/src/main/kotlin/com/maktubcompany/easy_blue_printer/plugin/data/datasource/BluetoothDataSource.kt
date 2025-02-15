@@ -13,14 +13,13 @@ class BluetoothDataSource {
     private var _device: BluetoothDeviceEntity? = null
     private var _socket: BluetoothSocket? = null
 
-    @SuppressLint("MissingPermission")
     fun getPairedDevices(): List<BluetoothDeviceEntity> {
         return bluetoothAdapter?.bondedDevices?.map {
             BluetoothDeviceEntity(it.name, it.address)
         } ?: emptyList()
     }
 
-    @SuppressLint("MissingPermission")
+
     fun connectToDevice(address: String): Boolean {
         val device = bluetoothAdapter?.bondedDevices?.find { it.address == address }
         val uuid = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")
