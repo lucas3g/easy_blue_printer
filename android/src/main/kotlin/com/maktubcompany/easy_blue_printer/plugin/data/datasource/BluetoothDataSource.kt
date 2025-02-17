@@ -78,8 +78,8 @@ class BluetoothDataSource {
             }
 
             val normalSize = byteArrayOf(0x1B, 0x21, 0x03)
-            val mediumSize = byteArrayOf(0x1B, 0x21, 0x10)
-            val largeSize = byteArrayOf(0x1B, 0x21, 0x20)
+            val mediumSize = byteArrayOf(0x1B, 0x21, 0x08)
+            val largeSize = byteArrayOf(0x1B, 0x21, 0x10)
             val hugeSize = byteArrayOf(0x1B, 0x21, 0x30)
 
             when (size) {

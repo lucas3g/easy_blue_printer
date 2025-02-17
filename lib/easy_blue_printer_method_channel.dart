@@ -13,6 +13,8 @@ class MethodChannelEasyBluePrinter extends EasyBluePrinterPlatform {
 
   @override
   Future<List<BluetoothDevice>> getPairedDevices() async {
+    await methodChannel.invokeMethod('requestBluetoothPermissions');
+
     final rawDevices = await methodChannel.invokeMethod('getPairedDevices');
 
     return BluetoothDevice.parseDevices(rawDevices.cast<String>());

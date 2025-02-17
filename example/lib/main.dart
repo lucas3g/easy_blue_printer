@@ -77,8 +77,8 @@ class _MyAppState extends State<MyApp> {
               ElevatedButton(
                 onPressed: () async {
                   await bluetoothController.printData(
-                    data: 'Hello, World!',
-                    fontSize: FS.normal,
+                    data: 'Sucesso voce configurou a impressora!!',
+                    fontSize: FS.medium,
                     textAlign: TA.center,
                     bold: false,
                   );
