@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.2.0] - 2025-02-15
+### release
+- **Added**: Request bluetooth permissions
+
 ## [1.1.4] - 2025-02-15
 ### release
 - **Added**: Fixed Print Image
