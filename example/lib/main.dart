@@ -17,18 +17,6 @@ class _MyAppState extends State<MyApp> {
   final BluetoothController bluetoothController = BluetoothController();
 
   @override
-  void initState() {
-    super.initState();
-    bluetoothController.startScan(); // Inicia o scan ao carregar a tela
-  }
-
-  @override
-  void dispose() {
-    bluetoothController.stopScan(); // Para o scan quando a tela for descartada
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
@@ -74,6 +62,13 @@ class _MyAppState extends State<MyApp> {
                   );
                 },
               ),
+              ElevatedButton(
+                onPressed: () {
+                  bluetoothController.startScan();
+                },
+                child: const Text('Buscar dispositivos'),
+              ),
+              SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () async {
                   await bluetoothController.printData(

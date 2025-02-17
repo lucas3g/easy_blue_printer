@@ -4,7 +4,7 @@ import 'package:easy_blue_printer/easy_blue_printer.dart';
 import 'package:flutter/services.dart';
 
 class BluetoothController {
-  final EasyBluePrinter _easyBluePrinterPlugin = EasyBluePrinter();
+  final EasyBluePrinter _easyBluePrinterPlugin = EasyBluePrinter.instance;
 
   final StreamController<List<BluetoothDevice>> _devicesStream =
       StreamController<List<BluetoothDevice>>.broadcast();

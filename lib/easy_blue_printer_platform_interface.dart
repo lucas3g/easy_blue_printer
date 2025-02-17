@@ -46,4 +46,6 @@ abstract class EasyBluePrinterPlatform extends PlatformInterface {
   Future<bool> isConnected();
 
   Future<bool> printImage({required Uint8List bytes, required TA textAlign});
+
+  Future<void> requestBluetoothPermissions();
 }

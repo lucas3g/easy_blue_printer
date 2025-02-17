@@ -13,6 +13,14 @@ export 'domain/enums/font_size.dart';
 export 'domain/enums/text_align.dart';
 
 class EasyBluePrinter {
+  EasyBluePrinter._() {
+    requestBluetoothPermissions();
+  }
+
+  static final EasyBluePrinter _instance = EasyBluePrinter._();
+
+  static EasyBluePrinter get instance => _instance;
+
   Future<List<BluetoothDevice>> getPairedDevices() async {
     return await EasyBluePrinterPlatform.instance.getPairedDevices();
   }
@@ -53,5 +61,9 @@ class EasyBluePrinter {
       bytes: bytes,
       textAlign: textAlign,
     );
+  }
+
+  Future<void> requestBluetoothPermissions() async {
+    await EasyBluePrinterPlatform.instance.requestBluetoothPermissions();
   }
 }
