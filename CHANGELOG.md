@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.2.2] - 2025-02-15
+### release
+- **Added**: Fix README
+
 ## [1.2.1] - 2025-02-15
 ### release
 - **Added**: Request bluetooth permissions in constructor
