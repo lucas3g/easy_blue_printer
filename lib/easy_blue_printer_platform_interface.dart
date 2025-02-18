@@ -34,12 +34,7 @@ abstract class EasyBluePrinterPlatform extends PlatformInterface {
 
   Future<bool> disconnectFromDevice();
 
-  Future<bool> printData({
-    required String data,
-    required FS fontSize,
-    required TA textAlign,
-    required bool bold,
-  });
+  Future<bool> printData({required String data, required FS fontSize, required TA textAlign, required bool bold});
 
   Future<void> printEmptyLine({required int callTimes});
 

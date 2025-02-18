@@ -33,12 +33,7 @@ class EasyBluePrinter {
     return await EasyBluePrinterPlatform.instance.disconnectFromDevice();
   }
 
-  Future<bool> printData({
-    required String data,
-    required FS fontSize,
-    required TA textAlign,
-    required bool bold,
-  }) async {
+  Future<bool> printData({required String data, required FS fontSize, required TA textAlign, required bool bold}) async {
     return await EasyBluePrinterPlatform.instance.printData(
       data: data,
       fontSize: fontSize,
@@ -55,12 +50,8 @@ class EasyBluePrinter {
     return await EasyBluePrinterPlatform.instance.isConnected();
   }
 
-  Future<bool> printImage(
-      {required Uint8List bytes, required TA textAlign}) async {
-    return await EasyBluePrinterPlatform.instance.printImage(
-      bytes: bytes,
-      textAlign: textAlign,
-    );
+  Future<bool> printImage({required Uint8List bytes, required TA textAlign}) async {
+    return await EasyBluePrinterPlatform.instance.printImage(bytes: bytes, textAlign: textAlign);
   }
 
   Future<void> requestBluetoothPermissions() async {

@@ -20,9 +20,7 @@ class MethodChannelEasyBluePrinter extends EasyBluePrinterPlatform {
 
   @override
   Future<bool> connectToDevice(BluetoothDevice device) async {
-    return await methodChannel.invokeMethod('connectToDevice', {
-      'address': device.address,
-    });
+    return await methodChannel.invokeMethod('connectToDevice', {'address': device.address});
   }
 
   @override
@@ -31,11 +29,7 @@ class MethodChannelEasyBluePrinter extends EasyBluePrinterPlatform {
   }
 
   @override
-  Future<bool> printData(
-      {required String data,
-      required FS fontSize,
-      required TA textAlign,
-      required bool bold}) async {
+  Future<bool> printData({required String data, required FS fontSize, required TA textAlign, required bool bold}) async {
     return await methodChannel.invokeMethod('printData', {
       'data': data,
       'fontSize': fontSize.index,
@@ -46,9 +40,7 @@ class MethodChannelEasyBluePrinter extends EasyBluePrinterPlatform {
 
   @override
   Future<void> printEmptyLine({required int callTimes}) async {
-    await methodChannel.invokeMethod('printEmptyLine', {
-      'callTimes': callTimes,
-    });
+    await methodChannel.invokeMethod('printEmptyLine', {'callTimes': callTimes});
   }
 
   @override
@@ -57,12 +49,8 @@ class MethodChannelEasyBluePrinter extends EasyBluePrinterPlatform {
   }
 
   @override
-  Future<bool> printImage(
-      {required Uint8List bytes, required TA textAlign}) async {
-    return await methodChannel.invokeMethod('printImage', {
-      'data': bytes,
-      'textAlign': textAlign.index,
-    });
+  Future<bool> printImage({required Uint8List bytes, required TA textAlign}) async {
+    return await methodChannel.invokeMethod('printImage', {'data': bytes, 'textAlign': textAlign.index});
   }
 
   @override

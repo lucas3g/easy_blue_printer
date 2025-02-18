@@ -17,8 +17,7 @@ class BluetoothDevice {
   static List<BluetoothDevice> parseDevices(List<String> deviceStrings) {
     return deviceStrings.map((device) {
       final name = device.substring(0, device.indexOf('('));
-      final address =
-          device.substring(device.indexOf('(') + 1, device.length - 1);
+      final address = device.substring(device.indexOf('(') + 1, device.length - 1);
 
       return BluetoothDevice(name: name, address: address);
     }).toList();
