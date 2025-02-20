@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.2.3] - 2025-02-15
+### release
+- **Added**: Fix SDK
+
 ## [1.2.2] - 2025-02-15
 ### release
 - **Added**: Fix README

@@ -1,0 +1,2 @@
+C:/Users/Lucas/Desktop/easy_blue_printer/example/android/app/.cxx/Debug/4q5j6z24/x86/CMakeFiles/edit_cache.dir
+C:/Users/Lucas/Desktop/easy_blue_printer/example/android/app/.cxx/Debug/4q5j6z24/x86/CMakeFiles/rebuild_cache.dir
