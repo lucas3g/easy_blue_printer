@@ -1,6 +1,6 @@
 name: easy_blue_printer
 description: "The **Easy Blue Printer** plugin allows seamless integration of Bluetooth printers in a Flutter app, enabling the scanning, connection, and printing functionality."
-version: 1.2.4
+version: 1.2.5
 repository: https://github.com/lucas3g/easy_blue_printer
 homepage: https://github.com/lucas3g/easy_blue_printer
 
