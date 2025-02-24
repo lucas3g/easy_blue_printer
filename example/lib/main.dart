@@ -99,6 +99,14 @@ class _MyAppState extends State<MyApp> {
                 },
                 child: const Text('Imprimir imagem'),
               ),
+              ElevatedButton(
+                onPressed: () async {
+                  final result = await bluetoothController.isConnected();
+
+                  print(result);
+                },
+                child: const Text('Testar conexao'),
+              ),
             ],
           ),
         ),

@@ -131,11 +131,20 @@ class BluetoothDataSource {
     }
 
     fun isConnected(): Boolean {
-        if (_socket == null) {
-            return false
-        }
+        // Verifica se o socket é nulo ou não está conectado inicialmente
+        val socket = _socket ?: return false
+        if (!socket.isConnected) return false
 
-        return _socket?.isConnected ?: false
+        return try {
+            // Tenta escrever um comando "ping" sem efeito.
+            // O comando 0x00 pode ser substituído por outro comando leve se necessário.
+            socket.outputStream.write(byteArrayOf(0x00))
+            socket.outputStream.flush()
+            true
+        } catch (e: IOException) {
+            // Se der erro, significa que a conexão foi perdida
+            false
+        }
     }
 
     fun printImage(data: ByteArray, align: Int): Boolean {
