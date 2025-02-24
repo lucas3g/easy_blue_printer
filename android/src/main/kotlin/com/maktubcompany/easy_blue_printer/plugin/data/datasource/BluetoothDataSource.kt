@@ -131,7 +131,11 @@ class BluetoothDataSource {
     }
 
     fun isConnected(): Boolean {
-        return _socket?.isConnected == true
+        if (_socket == null) {
+            return false
+        }
+
+        return _socket?.isConnected ?: false
     }
 
     fun printImage(data: ByteArray, align: Int): Boolean {

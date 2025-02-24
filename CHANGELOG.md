@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.2.4] - 2025-02-15
+### release
+- **Added**: Fix get device is connected
+
 ## [1.2.3] - 2025-02-15
 ### release
 - **Added**: Fix SDK
