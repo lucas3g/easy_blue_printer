@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.2.6] - 2025-02-15
+### release
+- **Added**: Fix connect to device
+
 ## [1.2.5] - 2025-02-15
 ### release
 - **Added**: Fix get device is connected

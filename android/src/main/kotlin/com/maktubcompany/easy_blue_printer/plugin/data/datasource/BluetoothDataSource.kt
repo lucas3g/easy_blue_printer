@@ -51,8 +51,7 @@ class BluetoothDataSource {
                 false
             }
         } catch (e: IOException) {
-            e.printStackTrace()
-            false
+            throw e
         }
     }
 
