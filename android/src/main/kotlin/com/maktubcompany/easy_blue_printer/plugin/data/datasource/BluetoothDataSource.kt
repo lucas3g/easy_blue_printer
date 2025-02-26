@@ -38,11 +38,11 @@ class BluetoothDataSource {
             _socket?.connect() // Tenta conectar
 
             // Se não conectar, faz fallback para reflection
-            if (_socket?.isConnected == false) {
+            /*if (_socket?.isConnected == false) {
                 val m = device.javaClass.getMethod("createRfcommSocket", Int::class.javaPrimitiveType)
                 _socket = m.invoke(device, 1) as BluetoothSocket
                 _socket?.connect()
-            }
+            }*/
 
             if (_socket?.isConnected == true) {
                 _device = BluetoothDeviceEntity(device.name, device.address)
@@ -96,8 +96,7 @@ class BluetoothDataSource {
 
             true
         } catch (e: IOException) {
-            e.printStackTrace()
-            false
+            throw e
         }
     }
 
@@ -108,8 +107,7 @@ class BluetoothDataSource {
             _socket = null
             true
         } catch (e: IOException) {
-            e.printStackTrace()
-            false
+            throw e
         }
     }
 
@@ -123,9 +121,7 @@ class BluetoothDataSource {
 
             true
         } catch (e: IOException) {
-            e.printStackTrace()
-
-            false
+            throw e
         }
     }
 
@@ -141,8 +137,7 @@ class BluetoothDataSource {
             socket.outputStream.flush()
             true
         } catch (e: IOException) {
-            // Se der erro, significa que a conexão foi perdida
-            false
+            throw e
         }
     }
 
@@ -168,6 +163,7 @@ class BluetoothDataSource {
                 }
 
                 _socket?.outputStream?.write(command)
+                _socket?.outputStream?.flush()
 
                 true
             } else {
@@ -175,8 +171,7 @@ class BluetoothDataSource {
                 false
             }
         } catch (e: IOException) {
-            e.printStackTrace()
-            false
+            throw e
         }
     }
 }
