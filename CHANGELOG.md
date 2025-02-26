@@ -1,26 +1,30 @@
 # Changelog
 
-## [1.2.6] - 2025-02-15
+## [1.2.7] - 2025-02-26
+### release
+- **Added**: Fix erros
+
+## [1.2.6] - 2025-02-26
 ### release
 - **Added**: Fix connect to device
 
-## [1.2.5] - 2025-02-15
+## [1.2.5] - 2025-02-25
 ### release
 - **Added**: Fix get device is connected
 
-## [1.2.4] - 2025-02-15
+## [1.2.4] - 2025-02-24
 ### release
 - **Added**: Fix get device is connected
 
-## [1.2.3] - 2025-02-15
+## [1.2.3] - 2025-02-23
 ### release
 - **Added**: Fix SDK
 
-## [1.2.2] - 2025-02-15
+## [1.2.2] - 2025-02-23
 ### release
 - **Added**: Fix README
 
-## [1.2.1] - 2025-02-15
+## [1.2.1] - 2025-02-23
 ### release
 - **Added**: Request bluetooth permissions in constructor
 
