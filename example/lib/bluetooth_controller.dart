@@ -22,7 +22,17 @@ class BluetoothController {
   }
 
   Future<bool> connectToDevice(BluetoothDevice device) async {
-    return await _easyBluePrinterPlugin.connectToDevice(device);
+    try {
+      final connected = await _easyBluePrinterPlugin.connectToDevice(device);
+
+      device.setConnected(connected);
+
+      return connected;
+    } catch (e) {
+      print(e);
+
+      return false;
+    }
   }
 
   Future<bool> disconnectFromDevice() async {
