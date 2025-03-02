@@ -1,0 +1,21 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+      {
+          "name": "[dev] Easy Blue Printer",
+          "request": "launch",
+          "type": "dart",
+          "env": {
+            "FLUTTER_ROOT": "${workspaceFolder}/.fvm/flutter_sdk"
+          }
+      },
+      {
+          "name": "[prod] Easy Blue Printer",
+          "request": "launch",
+          "type": "dart",
+          "env": {
+            "FLUTTER_ROOT": "${workspaceFolder}/.fvm/flutter_sdk"
+          }
+      },
+  ]
+}

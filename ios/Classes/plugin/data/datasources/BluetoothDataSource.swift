@@ -6,6 +6,8 @@ public class BluetoothDataSource: NSObject, CBCentralManagerDelegate, CBPeripher
     private var connectedPeripheral: CBPeripheral?
     private var connectedSocket: OutputStream?
     private var device: BluetoothDeviceEntity?
+    private var discoveredDevices: [BluetoothDeviceEntity] = []
+    private var scanCompletion: (([BluetoothDeviceEntity]) -> Void)?
 
     override init() {
         super.init()
@@ -13,17 +15,24 @@ public class BluetoothDataSource: NSObject, CBCentralManagerDelegate, CBPeripher
     }
 
     // Scan devices
-    public func scanDevices() -> [BluetoothDeviceEntity] {
-        guard let bluetoothManager = bluetoothManager, bluetoothManager.state == .poweredOn else {
-            return []
-        }
+    public func scanDevices(completion: @escaping ([BluetoothDeviceEntity]) -> Void) {
+       guard let bluetoothManager = bluetoothManager, bluetoothManager.state == .poweredOn else {
+           completion([])
+           return
+       }
 
-        bluetoothManager.scanForPeripherals(withServices: nil, options: nil)
-        var devices: [BluetoothDeviceEntity] = []
+       discoveredDevices.removeAll()
+       scanCompletion = completion
+       bluetoothManager.scanForPeripherals(withServices: nil, options: nil)
 
-        // Assuming device discovery is handled elsewhere in the delegate method
-        return devices
-    }
+       // Para evitar um scan infinito, paramos após alguns segundos
+       DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
+           self.bluetoothManager?.stopScan()
+           self.scanCompletion?(self.discoveredDevices)
+           self.scanCompletion = nil
+       }
+   }
+
 
     // Connect to device
     public func connectToDevice(address: String) -> Bool {
@@ -47,7 +56,11 @@ public class BluetoothDataSource: NSObject, CBCentralManagerDelegate, CBPeripher
     // Delegate method: didDiscover
     public func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
         let device = BluetoothDeviceEntity(name: peripheral.name ?? "Unknown", address: peripheral.identifier.uuidString)
-        // Add device to list of discovered devices
+
+        // Evitar duplicatas
+        if !discoveredDevices.contains(where: { $0.address == device.address }) {
+            discoveredDevices.append(device)
+        }
     }
 
     // Delegate method: didConnect

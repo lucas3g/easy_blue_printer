@@ -1,5 +1,6 @@
 library;
 
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:easy_blue_printer/domain/entities/bluetooth_device.dart';
@@ -14,7 +15,7 @@ export 'domain/enums/text_align.dart';
 
 class EasyBluePrinter {
   EasyBluePrinter._() {
-    requestBluetoothPermissions();
+    if (Platform.isAndroid) requestBluetoothPermissions();
   }
 
   static final EasyBluePrinter _instance = EasyBluePrinter._();
@@ -33,7 +34,11 @@ class EasyBluePrinter {
     return await EasyBluePrinterPlatform.instance.disconnectFromDevice();
   }
 
-  Future<bool> printData({required String data, required FS fontSize, required TA textAlign, required bool bold}) async {
+  Future<bool> printData(
+      {required String data,
+      required FS fontSize,
+      required TA textAlign,
+      required bool bold}) async {
     return await EasyBluePrinterPlatform.instance.printData(
       data: data,
       fontSize: fontSize,
@@ -50,8 +55,10 @@ class EasyBluePrinter {
     return await EasyBluePrinterPlatform.instance.isConnected();
   }
 
-  Future<bool> printImage({required Uint8List bytes, required TA textAlign}) async {
-    return await EasyBluePrinterPlatform.instance.printImage(bytes: bytes, textAlign: textAlign);
+  Future<bool> printImage(
+      {required Uint8List bytes, required TA textAlign}) async {
+    return await EasyBluePrinterPlatform.instance
+        .printImage(bytes: bytes, textAlign: textAlign);
   }
 
   Future<void> requestBluetoothPermissions() async {

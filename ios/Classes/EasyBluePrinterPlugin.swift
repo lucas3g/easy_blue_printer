@@ -11,11 +11,12 @@ public class EasyBluePrinterPlugin: NSObject, FlutterPlugin {
 
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         switch call.method {
-        case "scanDevices":
+        case "getPairedDevices":
             // Execute scanDevicesUseCase and return the list of devices
-            let devices = AppModule.scanDevicesUseCase.execute()
-            let deviceList = devices.map { "\($0.name) (\($0.address))" }
-            result(deviceList)
+            AppModule.scanDevicesUseCase.execute { devices in
+                let deviceList = devices.map { "\($0.name) (\($0.address))" }
+                result(deviceList)
+            }
 
         case "connectToDevice":
             // Retrieve address and connect to the device

@@ -9,9 +9,11 @@ public class BluetoothRepositoryImpl: BluetoothRepository {
         self.dataSource = dataSource
     }
 
-    // Escanear e retornar dispositivos Bluetooth disponíveis
-    public func scanDevices() -> [BluetoothDeviceEntity] {
-        return dataSource.scanDevices()
+    // Escanear e retornar dispositivos Bluetooth disponíveis de forma assíncrona
+    public func scanDevices(completion: @escaping ([BluetoothDeviceEntity]) -> Void) {
+        dataSource.scanDevices { devices in
+            completion(devices)
+        }
     }
 
     // Conectar ao dispositivo pelo endereço
