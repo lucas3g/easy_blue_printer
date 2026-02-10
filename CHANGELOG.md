@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.3.0] - 2026-02-10
+### Added
+- **iOS**: Image printing support
+- **iOS**: `isConnected` use case
+- **iOS**: Image processing utilities (scale and bitmap decode)
+- **Docs**: Complete bilingual README (English and Portuguese) for pub.dev
+
+### Fixed
+- **iOS**: First scan no longer returns empty — waits for CBCentralManager to be ready before scanning
+- **iOS**: Scan loading now stays visible until devices are found
+- **Android**: Image printing sends data in chunks to avoid buffer overflow
+- **Android**: Filter out unnamed devices from scan results
+
 ## [1.2.7] - 2025-02-26
 ### release
 - **Added**: Fix erros
