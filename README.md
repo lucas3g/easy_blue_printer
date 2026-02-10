@@ -35,7 +35,7 @@ Add to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  easy_blue_printer: ^1.2.7
+  easy_blue_printer: ^latest_version
 ```
 
 Then run:
@@ -426,7 +426,7 @@ Adicione no seu `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  easy_blue_printer: ^1.2.7
+  easy_blue_printer: ^latest_version
 ```
 
 Depois execute:
