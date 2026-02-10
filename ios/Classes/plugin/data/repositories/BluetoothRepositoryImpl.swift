@@ -35,4 +35,12 @@ public class BluetoothRepositoryImpl: BluetoothRepository {
     public func printEmptyLine(callTimes: Int) -> Bool {
         return dataSource.printEmptyLine(callTimes: callTimes)
     }
+
+    public func isConnected() -> Bool {
+        return dataSource.isConnected()
+    }
+
+    public func printImage(data: Data, align: Int) -> Bool {
+        return dataSource.printImage(data: data, align: align)
+    }
 }

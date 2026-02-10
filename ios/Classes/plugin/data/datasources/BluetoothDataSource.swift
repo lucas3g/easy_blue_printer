@@ -1,179 +1,305 @@
 import Foundation
 import CoreBluetooth
+import UIKit
 
 public class BluetoothDataSource: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate {
     private var bluetoothManager: CBCentralManager?
     private var connectedPeripheral: CBPeripheral?
-    private var connectedSocket: OutputStream?
-    private var device: BluetoothDeviceEntity?
+    private var writableCharacteristic: CBCharacteristic?
     private var discoveredDevices: [BluetoothDeviceEntity] = []
+    private var discoveredPeripherals: [String: CBPeripheral] = [:]
     private var scanCompletion: (([BluetoothDeviceEntity]) -> Void)?
+    private var connectionSemaphore: DispatchSemaphore?
+    private var pendingServiceCount: Int = 0
+    private let bluetoothQueue = DispatchQueue(label: "com.easy_blue_printer.bluetooth")
+    private var managerReady = false
+    private var pendingScanCompletion: (([BluetoothDeviceEntity]) -> Void)?
 
     override init() {
         super.init()
-        bluetoothManager = CBCentralManager(delegate: self, queue: nil)
+        bluetoothManager = CBCentralManager(delegate: self, queue: bluetoothQueue)
     }
 
-    // Scan devices
+    // MARK: - Public methods
+
     public func scanDevices(completion: @escaping ([BluetoothDeviceEntity]) -> Void) {
-       guard let bluetoothManager = bluetoothManager, bluetoothManager.state == .poweredOn else {
-           completion([])
-           return
-       }
+        bluetoothQueue.async { [weak self] in
+            guard let self = self,
+                  let bluetoothManager = self.bluetoothManager else {
+                completion([])
+                return
+            }
 
-       discoveredDevices.removeAll()
-       scanCompletion = completion
-       bluetoothManager.scanForPeripherals(withServices: nil, options: nil)
+            if !self.managerReady {
+                self.pendingScanCompletion = completion
+                return
+            }
 
-       // Para evitar um scan infinito, paramos após alguns segundos
-       DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
-           self.bluetoothManager?.stopScan()
-           self.scanCompletion?(self.discoveredDevices)
-           self.scanCompletion = nil
-       }
-   }
+            guard bluetoothManager.state == .poweredOn else {
+                completion([])
+                return
+            }
 
+            self.startScan(bluetoothManager: bluetoothManager, completion: completion)
+        }
+    }
 
-    // Connect to device
+    private func startScan(bluetoothManager: CBCentralManager, completion: @escaping ([BluetoothDeviceEntity]) -> Void) {
+        self.discoveredDevices.removeAll()
+        self.discoveredPeripherals.removeAll()
+        self.scanCompletion = completion
+        bluetoothManager.scanForPeripherals(withServices: nil, options: nil)
+
+        self.bluetoothQueue.asyncAfter(deadline: .now() + 5.0) { [weak self] in
+            guard let self = self else { return }
+            self.bluetoothManager?.stopScan()
+            self.scanCompletion?(self.discoveredDevices)
+            self.scanCompletion = nil
+        }
+    }
+
     public func connectToDevice(address: String) -> Bool {
         guard let bluetoothManager = bluetoothManager else { return false }
 
-        if let peripheral = findPeripheralByAddress(address) {
-            bluetoothManager.stopScan()
-            bluetoothManager.connect(peripheral, options: nil)
-            return true
+        guard let peripheral = discoveredPeripherals[address] else { return false }
+
+        bluetoothManager.stopScan()
+        writableCharacteristic = nil
+        connectionSemaphore = DispatchSemaphore(value: 0)
+
+        bluetoothManager.connect(peripheral, options: nil)
+
+        let result = connectionSemaphore?.wait(timeout: .now() + 10)
+        connectionSemaphore = nil
+
+        return result == .success && writableCharacteristic != nil
+    }
+
+    public func disconnectFromDevice() -> Bool {
+        if let peripheral = connectedPeripheral {
+            bluetoothManager?.cancelPeripheralConnection(peripheral)
         }
-        return false
+        connectedPeripheral = nil
+        writableCharacteristic = nil
+        return true
     }
 
-    // Find peripheral by address
-    private func findPeripheralByAddress(_ address: String) -> CBPeripheral? {
-        // This would ideally return the corresponding peripheral by address.
-        // You need to store the discovered peripherals to match by address.
-        return nil
+    public func printData(data: String, size: Int, align: Int, bold: Bool) -> Bool {
+        var buffer = Data()
+        buffer.append(contentsOf: getAlignmentData(for: align))
+        buffer.append(contentsOf: bold ? [0x1B, 0x47, 0x01] : [0x1B, 0x47, 0x00])
+        buffer.append(contentsOf: getFontSizeData(for: size))
+        buffer.append(data.data(using: .utf8) ?? Data())
+        buffer.append(contentsOf: [0x0A])
+        return writeData(buffer)
     }
 
-    // Delegate method: didDiscover
-    public func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
-        let device = BluetoothDeviceEntity(name: peripheral.name ?? "Unknown", address: peripheral.identifier.uuidString)
+    public func printEmptyLine(callTimes: Int) -> Bool {
+        var buffer = Data()
+        for _ in 0..<callTimes {
+            buffer.append(contentsOf: [0x0A])
+        }
+        return writeData(buffer)
+    }
 
-        // Evitar duplicatas
-        if !discoveredDevices.contains(where: { $0.address == device.address }) {
-            discoveredDevices.append(device)
+    public func isConnected() -> Bool {
+        return connectedPeripheral != nil
+            && connectedPeripheral?.state == .connected
+            && writableCharacteristic != nil
+    }
+
+    public func printImage(data: Data, align: Int) -> Bool {
+        guard let image = UIImage(data: data) else { return false }
+
+        let paperWidth = 384
+        guard let scaledImage = Utils.scaleImage(image, toWidth: paperWidth) else { return false }
+        guard let command = Utils.decodeBitmap(scaledImage) else { return false }
+
+        var buffer = Data()
+        buffer.append(contentsOf: getAlignmentData(for: align))
+        buffer.append(command)
+
+        let imageResult = writeImageData(buffer)
+
+        // Wait for the printer to finish processing the image
+        Thread.sleep(forTimeInterval: 0.2)
+
+        // Feed empty lines for paper tear-off
+        _ = writeData(Data([0x0A, 0x0A, 0x0A, 0x0A]))
+
+        // Reset printer to text mode after image
+        let resetCommand = Data([0x1B, 0x40])
+        _ = writeData(resetCommand)
+
+        return imageResult
+    }
+
+    // MARK: - Private helpers
+
+    private func writeImageData(_ data: Data) -> Bool {
+        guard let peripheral = connectedPeripheral,
+              let characteristic = writableCharacteristic else { return false }
+
+        let writeType: CBCharacteristicWriteType = characteristic.properties.contains(.writeWithoutResponse)
+            ? .withoutResponse
+            : .withResponse
+
+        let mtu = peripheral.maximumWriteValueLength(for: writeType)
+        let chunkSize = max(mtu, 20)
+        var offset = 0
+
+        while offset < data.count {
+            let end = min(offset + chunkSize, data.count)
+            let chunk = data.subdata(in: offset..<end)
+
+            peripheral.writeValue(chunk, for: characteristic, type: writeType)
+            Thread.sleep(forTimeInterval: 0.02)
+
+            offset = end
+        }
+        return true
+    }
+
+    private func writeData(_ data: Data) -> Bool {
+        guard let peripheral = connectedPeripheral,
+              let characteristic = writableCharacteristic else { return false }
+
+        let writeType: CBCharacteristicWriteType = characteristic.properties.contains(.writeWithoutResponse)
+            ? .withoutResponse
+            : .withResponse
+
+        let mtu = peripheral.maximumWriteValueLength(for: writeType)
+        let chunkSize = max(mtu, 20)
+        var offset = 0
+
+        while offset < data.count {
+            let end = min(offset + chunkSize, data.count)
+            let chunk = data.subdata(in: offset..<end)
+
+            peripheral.writeValue(chunk, for: characteristic, type: writeType)
+
+            if writeType == .withoutResponse {
+                Thread.sleep(forTimeInterval: 0.01)
+            }
+
+            offset = end
+        }
+        return true
+    }
+
+    private func getAlignmentData(for align: Int) -> [UInt8] {
+        switch align {
+        case 0: return [0x1B, 0x61, 0x00]
+        case 1: return [0x1B, 0x61, 0x01]
+        case 2: return [0x1B, 0x61, 0x02]
+        default: return []
         }
     }
 
-    // Delegate method: didConnect
+    private func getFontSizeData(for size: Int) -> [UInt8] {
+        switch size {
+        case 0: return [0x1B, 0x21, 0x03]
+        case 1: return [0x1B, 0x21, 0x08]
+        case 2: return [0x1B, 0x21, 0x10]
+        case 3: return [0x1B, 0x21, 0x30]
+        default: return []
+        }
+    }
+
+    // MARK: - CBCentralManagerDelegate
+
+    public func centralManagerDidUpdateState(_ central: CBCentralManager) {
+        switch central.state {
+        case .poweredOn:
+            print("Bluetooth is powered on")
+            managerReady = true
+            if let pending = pendingScanCompletion {
+                pendingScanCompletion = nil
+                startScan(bluetoothManager: central, completion: pending)
+            }
+        case .poweredOff:
+            print("Bluetooth is powered off")
+        case .unauthorized:
+            print("Bluetooth is not authorized")
+        case .unsupported:
+            print("Bluetooth is not supported on this device")
+        case .resetting:
+            print("Bluetooth state is resetting")
+        case .unknown:
+            print("Bluetooth state is unknown")
+        @unknown default:
+            print("A new Bluetooth state was added")
+        }
+    }
+
+    public func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String: Any], rssi RSSI: NSNumber) {
+        guard let name = peripheral.name, !name.isEmpty, name != "Unknown" else { return }
+
+        let address = peripheral.identifier.uuidString
+
+        if discoveredPeripherals[address] == nil {
+            discoveredPeripherals[address] = peripheral
+            discoveredDevices.append(BluetoothDeviceEntity(name: name, address: address))
+        }
+    }
+
     public func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
         connectedPeripheral = peripheral
         peripheral.delegate = self
         peripheral.discoverServices(nil)
     }
 
-    // Delegate method: didFailToConnect
     public func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
-        // Handle failure to connect
+        connectionSemaphore?.signal()
     }
 
-    public func centralManagerDidUpdateState(_ central: CBCentralManager) {
-        switch central.state {
-        case .unknown:
-            print("Bluetooth state is unknown")
-        case .resetting:
-            print("Bluetooth state is resetting")
-        case .unsupported:
-            print("Bluetooth is not supported on this device")
-        case .unauthorized:
-            print("Bluetooth is not authorized")
-        case .poweredOff:
-            print("Bluetooth is powered off")
-        case .poweredOn:
-            print("Bluetooth is powered on")
-        @unknown default:
-            print("A new Bluetooth state was added")
+    public func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
+        connectedPeripheral = nil
+        writableCharacteristic = nil
+    }
+
+    // MARK: - CBPeripheralDelegate
+
+    public func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
+        guard let services = peripheral.services, !services.isEmpty else {
+            connectionSemaphore?.signal()
+            return
+        }
+
+        pendingServiceCount = services.count
+        for service in services {
+            peripheral.discoverCharacteristics(nil, for: service)
         }
     }
 
-    // Print data
-    public func printData(data: String, size: Int, align: Int, bold: Bool) -> Bool {
-        guard let socket = connectedSocket else { return false }
+    public func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
+        if writableCharacteristic == nil, let characteristics = service.characteristics {
+            let knownCharUUIDs: [CBUUID] = [
+                CBUUID(string: "49535343-8841-43F4-A8D4-ECBE34729BB3"),
+                CBUUID(string: "BEF8D6C9-9C21-4C9E-B632-BD58C1009F9F"),
+            ]
 
-        let alignmentData: [UInt8] = getAlignmentData(for: align)
-        let boldData: [UInt8] = bold ? [0x1B, 0x47, 0x01] : [0x1B, 0x47, 0x00]
-        let fontSizeData: [UInt8] = getFontSizeData(for: size)
-
-        // Write data to socket
-        do {
-            try socket.write(data: alignmentData)
-            try socket.write(data: boldData)
-            try socket.write(data: fontSizeData)
-            try socket.write(data: [UInt8](data.utf8))
-            try socket.write(data: [0x0A]) // New line
-            return true
-        } catch {
-            print("Error printing data: \(error)")
-            return false
-        }
-    }
-
-    // Get alignment data
-    private func getAlignmentData(for align: Int) -> [UInt8] {
-        switch align {
-        case 0: return [0x1B, 0x61, 0x00] // Left align
-        case 1: return [0x1B, 0x61, 0x01] // Center align
-        case 2: return [0x1B, 0x61, 0x02] // Right align
-        default: return []
-        }
-    }
-
-    // Get font size data
-    private func getFontSizeData(for size: Int) -> [UInt8] {
-        switch size {
-        case 0: return [0x1B, 0x21, 0x03] // Normal size
-        case 1: return [0x1B, 0x21, 0x10] // Medium size
-        case 2: return [0x1B, 0x21, 0x20] // Large size
-        case 3: return [0x1B, 0x21, 0x30] // Huge size
-        default: return []
-        }
-    }
-
-    // Disconnect from device
-    public func disconnectFromDevice() -> Bool {
-        do {
-            if let peripheral = connectedPeripheral {
-                bluetoothManager?.cancelPeripheralConnection(peripheral)
+            for char in characteristics {
+                if knownCharUUIDs.contains(char.uuid) &&
+                    (char.properties.contains(.write) || char.properties.contains(.writeWithoutResponse)) {
+                    writableCharacteristic = char
+                    break
+                }
             }
-            connectedPeripheral = nil
-            connectedSocket = nil
-            return true
-        } catch {
-            print("Error disconnecting from device: \(error)")
-            return false
-        }
-    }
 
-    // Print empty line
-    public func printEmptyLine(callTimes: Int) -> Bool {
-        guard let socket = connectedSocket else { return false }
-
-        do {
-            for _ in 0..<callTimes {
-                try socket.write(data: [0x0A]) // New line
+            if writableCharacteristic == nil {
+                for char in characteristics {
+                    if char.properties.contains(.writeWithoutResponse) || char.properties.contains(.write) {
+                        writableCharacteristic = char
+                        break
+                    }
+                }
             }
-            return true
-        } catch {
-            print("Error printing empty line: \(error)")
-            return false
         }
-    }
-}
 
-// Extension for OutputStream to handle data writing
-extension OutputStream {
-    func write(data: [UInt8]) throws {
-        let pointer = UnsafeMutablePointer<UInt8>.allocate(capacity: data.count)
-        pointer.initialize(from: data, count: data.count)
-        self.write(pointer, maxLength: data.count)
-        pointer.deallocate()
+        pendingServiceCount -= 1
+        if pendingServiceCount <= 0 {
+            connectionSemaphore?.signal()
+        }
     }
 }

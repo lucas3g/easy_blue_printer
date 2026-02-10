@@ -12,4 +12,6 @@ public class AppModule {
     public static let printUseCase = PrintUseCase(repository: bluetoothRepository)
     public static let disconnectDeviceUseCase = DisconnectDeviceUseCase(repository: bluetoothRepository)
     public static let feedLineUseCase = FeedLineUseCase(repository: bluetoothRepository)
+    public static let isConnectedUseCase = IsConnectedUseCase(repository: bluetoothRepository)
+    public static let printImageUseCase = PrintImageUseCase(repository: bluetoothRepository)
 }

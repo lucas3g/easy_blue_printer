@@ -59,36 +59,23 @@ object Utils {
         }
 
         val bmpHexList = binaryListToHexStringList(list)
-        val commandHexString = "1D763000"
-        var widthHexString = Integer
-            .toHexString(
-                if (bmpWidth % 8 == 0)
-                    bmpWidth / 8
-                else
-                    (bmpWidth / 8 + 1)
-            )
-        if (widthHexString.length > 10) {
-            Log.e("decodeBitmap error", " width is too large")
-            return null
-        } else if (widthHexString.length == 1) {
-            widthHexString = "0$widthHexString"
-        }
-        widthHexString = widthHexString + "00"
 
-        var heightHexString = Integer.toHexString(bmpHeight)
-        if (heightHexString.length > 10) {
-            Log.e("decodeBitmap error", " height is too large")
-            return null
-        } else if (heightHexString.length == 1) {
-            heightHexString = "0$heightHexString"
-        }
-        heightHexString = heightHexString + "00"
+        // GS v 0 command header: 1D 76 30 00 xL xH yL yH
+        // xL/xH = bytes per line (little-endian), yL/yH = height in lines (little-endian)
+        val header = byteArrayOf(
+            0x1D, 0x76, 0x30, 0x00,
+            (bitLen and 0xFF).toByte(),
+            ((bitLen shr 8) and 0xFF).toByte(),
+            (bmpHeight and 0xFF).toByte(),
+            ((bmpHeight shr 8) and 0xFF).toByte()
+        )
 
-        val commandList: MutableList<String> = ArrayList()
-        commandList.add(commandHexString + widthHexString + heightHexString)
-        commandList.addAll(bmpHexList)
+        val rasterData = hexList2Byte(bmpHexList)
+        val result = ByteArray(header.size + rasterData.size)
+        System.arraycopy(header, 0, result, 0, header.size)
+        System.arraycopy(rasterData, 0, result, header.size, rasterData.size)
 
-        return hexList2Byte(commandList)
+        return result
     }
 
     fun binaryListToHexStringList(list: List<String>): List<String> {

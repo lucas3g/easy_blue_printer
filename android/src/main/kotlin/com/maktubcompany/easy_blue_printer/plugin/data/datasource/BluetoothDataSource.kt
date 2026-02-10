@@ -17,9 +17,10 @@ class BluetoothDataSource {
     private var _socket: BluetoothSocket? = null
 
     fun getPairedDevices(): List<BluetoothDeviceEntity> {
-        return bluetoothAdapter?.bondedDevices?.map {
-            BluetoothDeviceEntity(it.name, it.address)
-        } ?: emptyList()
+        return bluetoothAdapter?.bondedDevices
+            ?.filter { !it.name.isNullOrBlank() && it.name != "Unknown" }
+            ?.map { BluetoothDeviceEntity(it.name, it.address) }
+            ?: emptyList()
     }
 
 
@@ -162,7 +163,26 @@ class BluetoothDataSource {
                     2 -> _socket?.outputStream?.write(rightAlign)
                 }
 
-                _socket?.outputStream?.write(command)
+                // Send image data in chunks to avoid overflowing the BT buffer
+                val chunkSize = 512
+                var offset = 0
+                while (offset < command.size) {
+                    val end = minOf(offset + chunkSize, command.size)
+                    _socket?.outputStream?.write(command, offset, end - offset)
+                    _socket?.outputStream?.flush()
+                    Thread.sleep(20)
+                    offset = end
+                }
+
+                // Wait for the printer to finish processing the image
+                Thread.sleep(200)
+
+                // Feed empty lines for paper tear-off
+                _socket?.outputStream?.write("\n\n\n\n".toByteArray())
+                _socket?.outputStream?.flush()
+
+                // Reset printer to text mode after image
+                _socket?.outputStream?.write(byteArrayOf(0x1B, 0x40))
                 _socket?.outputStream?.flush()
 
                 true

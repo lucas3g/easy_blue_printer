@@ -6,4 +6,6 @@ public protocol BluetoothRepository {
     func disconnectFromDevice() -> Bool
     func printData(data: String, size: Int, align: Int, bold: Bool) -> Bool
     func printEmptyLine(callTimes: Int) -> Bool
+    func isConnected() -> Bool
+    func printImage(data: Data, align: Int) -> Bool
 }
