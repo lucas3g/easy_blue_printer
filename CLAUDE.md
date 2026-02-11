@@ -2,7 +2,7 @@
 
 ## Development Commands
 
-This project uses **FVM** (Flutter Version Management) with Flutter **3.29.0**.
+This project uses **FVM** (Flutter Version Management) with Flutter **3.38.9**.
 
 ```bash
 # Always prefix flutter commands with fvm

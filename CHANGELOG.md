@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.2] - 2026-02-11
+
+### Fixed
+- **iOS**: Connected peripheral now appears in scan results even if not discovered during scan
+- Upgraded Flutter SDK to 3.38.9
+- Fixed VS Code launch configuration
+
 ## [1.3.1] - 2026-02-10
 - **FIX** README
 

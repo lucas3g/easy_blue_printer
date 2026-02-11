@@ -53,6 +53,17 @@ public class BluetoothDataSource: NSObject, CBCentralManagerDelegate, CBPeripher
         self.bluetoothQueue.asyncAfter(deadline: .now() + 5.0) { [weak self] in
             guard let self = self else { return }
             self.bluetoothManager?.stopScan()
+
+            if let connected = self.connectedPeripheral,
+               let name = connected.name,
+               !name.isEmpty {
+                let address = connected.identifier.uuidString
+                if self.discoveredPeripherals[address] == nil {
+                    self.discoveredPeripherals[address] = connected
+                    self.discoveredDevices.insert(BluetoothDeviceEntity(name: name, address: address), at: 0)
+                }
+            }
+
             self.scanCompletion?(self.discoveredDevices)
             self.scanCompletion = nil
         }

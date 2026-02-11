@@ -5,6 +5,8 @@
           "name": "[dev] Easy Blue Printer",
           "request": "launch",
           "type": "dart",
+          "program": "lib/main.dart",
+          "cwd": "${workspaceFolder}/example",
           "env": {
             "FLUTTER_ROOT": "${workspaceFolder}/.fvm/flutter_sdk"
           }
@@ -13,9 +15,11 @@
           "name": "[prod] Easy Blue Printer",
           "request": "launch",
           "type": "dart",
+          "program": "example/lib/main.dart",
+          "cwd": "${workspaceFolder}/example",
           "env": {
             "FLUTTER_ROOT": "${workspaceFolder}/.fvm/flutter_sdk"
           }
-      },
+      }
   ]
 }
