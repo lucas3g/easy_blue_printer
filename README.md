@@ -391,6 +391,12 @@ class _PrinterPageState extends State<PrinterPage> {
 }
 ```
 
+## Donations
+
+If this package helped you, consider buying me a coffee!
+
+**PIX:** `lucas.elinfo@gmail.com`
+
 ## Contributing
 
 Contributions are welcome! Feel free to open a PR or report issues on the [repository](https://github.com/lucas3g/easy_blue_printer).
@@ -781,6 +787,12 @@ class _PrinterPageState extends State<PrinterPage> {
   }
 }
 ```
+
+## Doacoes
+
+Se este pacote te ajudou, considere me pagar um cafe!
+
+**PIX:** `lucas.elinfo@gmail.com`
 
 ## Contribuindo
 
