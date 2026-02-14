@@ -395,7 +395,7 @@ class _PrinterPageState extends State<PrinterPage> {
 
 If this package helped you, consider buying me a coffee!
 
-**PIX:** `lucas.elinfo@gmail.com`
+**PIX:** `17ec92dc-89cf-4eb9-be90-8cab0fc2460c`
 
 ## Contributing
 
@@ -792,7 +792,7 @@ class _PrinterPageState extends State<PrinterPage> {
 
 Se este pacote te ajudou, considere me pagar um cafe!
 
-**PIX:** `lucas.elinfo@gmail.com`
+**PIX:** `17ec92dc-89cf-4eb9-be90-8cab0fc2460c`
 
 ## Contribuindo
 

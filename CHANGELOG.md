@@ -1,5 +1,8 @@
 # Changelog
 
+## [1.3.4] - 2026-02-14
+- Updated PIX donation key in README
+
 ## [1.3.3] - 2026-02-11
 - **FIX** README
 
