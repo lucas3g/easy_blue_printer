@@ -67,4 +67,8 @@ class BluetoothController {
     return await _easyBluePrinterPlugin.printImage(
         bytes: bytes, textAlign: textAlign);
   }
+
+  Future<void> configurePrinter(PaperConfig config) async {
+    await _easyBluePrinterPlugin.configurePrinter(config);
+  }
 }

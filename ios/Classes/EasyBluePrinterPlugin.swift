@@ -85,6 +85,14 @@ public class EasyBluePrinterPlugin: NSObject, FlutterPlugin {
                 result(FlutterError(code: "400", message: "Invalid arguments", details: nil))
             }
 
+        case "configurePrinter":
+            if let args = call.arguments as? [String: Any], let paperWidth = args["paperWidth"] as? Int {
+                AppModule.configurePrinterUseCase.execute(paperWidth: paperWidth)
+                result(nil)
+            } else {
+                result(FlutterError(code: "400", message: "paperWidth is required", details: nil))
+            }
+
         case "requestBluetoothPermissions":
             result("Permissions are handled via Info.plist on iOS")
 

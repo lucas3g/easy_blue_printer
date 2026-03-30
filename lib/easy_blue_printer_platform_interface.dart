@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:easy_blue_printer/domain/entities/bluetooth_device.dart';
+import 'package:easy_blue_printer/domain/entities/paper_config.dart';
 import 'package:easy_blue_printer/domain/enums/font_size.dart';
 import 'package:easy_blue_printer/domain/enums/text_align.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
@@ -43,4 +44,6 @@ abstract class EasyBluePrinterPlatform extends PlatformInterface {
   Future<bool> printImage({required Uint8List bytes, required TA textAlign});
 
   Future<void> requestBluetoothPermissions();
+
+  Future<void> configurePrinter(PaperConfig config);
 }

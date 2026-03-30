@@ -14,6 +14,7 @@ public class BluetoothDataSource: NSObject, CBCentralManagerDelegate, CBPeripher
     private let bluetoothQueue = DispatchQueue(label: "com.easy_blue_printer.bluetooth")
     private var managerReady = false
     private var pendingScanCompletion: (([BluetoothDeviceEntity]) -> Void)?
+    private var paperWidth: Int = 384
 
     override init() {
         super.init()
@@ -119,10 +120,13 @@ public class BluetoothDataSource: NSObject, CBCentralManagerDelegate, CBPeripher
             && writableCharacteristic != nil
     }
 
+    public func configurePrinter(paperWidth: Int) {
+        self.paperWidth = paperWidth
+    }
+
     public func printImage(data: Data, align: Int) -> Bool {
         guard let image = UIImage(data: data) else { return false }
 
-        let paperWidth = 384
         guard let scaledImage = Utils.scaleImage(image, toWidth: paperWidth) else { return false }
         guard let command = Utils.decodeBitmap(scaledImage) else { return false }
 

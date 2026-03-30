@@ -37,6 +37,7 @@ class _PrinterPageState extends State<PrinterPage> {
   bool _isScanning = false;
   bool _isLoading = false;
   bool _hasScanned = false;
+  PaperConfig _paperConfig = PaperConfig.roll58mm;
 
   bool get _isConnected => _connectedDevice != null;
 
@@ -119,6 +120,15 @@ class _PrinterPageState extends State<PrinterPage> {
     }
   }
 
+  Future<void> _onPaperConfigChanged(PaperConfig config) async {
+    setState(() => _paperConfig = config);
+    try {
+      await _controller.configurePrinter(config);
+    } catch (e) {
+      _showSnackBar('Error configuring printer: $e', isError: true);
+    }
+  }
+
   Future<void> _testConnection() async {
     setState(() => _isLoading = true);
     try {
@@ -181,46 +191,49 @@ class _PrinterPageState extends State<PrinterPage> {
           ),
         ],
       ),
-      body: Column(
-        children: [
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
           // Device list section
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-              child: Card(
-                clipBehavior: Clip.antiAlias,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 12, 8, 4),
-                      child: Row(
-                        children: [
-                          Icon(Icons.bluetooth,
-                              size: 20, color: colorScheme.primary),
-                          const SizedBox(width: 8),
-                          Text('Paired Devices',
-                              style: Theme.of(context).textTheme.titleMedium),
-                          const Spacer(),
-                          IconButton(
-                            icon: _isScanning
-                                ? SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                        strokeWidth: 2),
-                                  )
-                                : const Icon(Icons.refresh),
-                            tooltip: 'Scan devices',
-                            onPressed: _isScanning ? null : _scan,
-                          ),
-                        ],
-                      ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            child: Card(
+              clipBehavior: Clip.antiAlias,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 8, 4),
+                    child: Row(
+                      children: [
+                        Icon(Icons.bluetooth,
+                            size: 20, color: colorScheme.primary),
+                        const SizedBox(width: 8),
+                        Text('Paired Devices',
+                            style: Theme.of(context).textTheme.titleMedium),
+                        const Spacer(),
+                        IconButton(
+                          icon: _isScanning
+                              ? SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2),
+                                )
+                              : const Icon(Icons.refresh),
+                          tooltip: 'Scan devices',
+                          onPressed: _isScanning ? null : _scan,
+                        ),
+                      ],
                     ),
-                    const Divider(height: 1),
-                    Expanded(child: _buildDeviceList()),
-                  ],
-                ),
+                  ),
+                  const Divider(height: 1),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 240),
+                    child: _buildDeviceList(),
+                  ),
+                ],
               ),
             ),
           ),
@@ -240,6 +253,33 @@ class _PrinterPageState extends State<PrinterPage> {
                         const SizedBox(width: 8),
                         Text('Actions',
                             style: Theme.of(context).textTheme.titleMedium),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Icon(Icons.receipt_long, size: 18, color: colorScheme.onSurfaceVariant),
+                        const SizedBox(width: 8),
+                        Text('Paper roll:', style: Theme.of(context).textTheme.bodyMedium),
+                        const SizedBox(width: 12),
+                        SegmentedButton<PaperConfig>(
+                          segments: const [
+                            ButtonSegment(
+                              value: PaperConfig.roll58mm,
+                              label: Text('58 mm'),
+                            ),
+                            ButtonSegment(
+                              value: PaperConfig.roll80mm,
+                              label: Text('80 mm'),
+                            ),
+                          ],
+                          selected: {_paperConfig},
+                          onSelectionChanged: (selection) =>
+                              _onPaperConfigChanged(selection.first),
+                          style: const ButtonStyle(
+                            visualDensity: VisualDensity.compact,
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 12),
@@ -287,6 +327,7 @@ class _PrinterPageState extends State<PrinterPage> {
             ),
           ),
         ],
+        ),
       ),
       // Loading overlay
       bottomNavigationBar: _isLoading ? const LinearProgressIndicator() : null,

@@ -1,4 +1,5 @@
 import 'package:easy_blue_printer/domain/entities/bluetooth_device.dart';
+import 'package:easy_blue_printer/domain/entities/paper_config.dart';
 import 'package:easy_blue_printer/domain/enums/font_size.dart';
 import 'package:easy_blue_printer/domain/enums/text_align.dart';
 import 'package:flutter/foundation.dart';
@@ -56,5 +57,10 @@ class MethodChannelEasyBluePrinter extends EasyBluePrinterPlatform {
   @override
   Future<void> requestBluetoothPermissions() async {
     await methodChannel.invokeMethod('requestBluetoothPermissions');
+  }
+
+  @override
+  Future<void> configurePrinter(PaperConfig config) async {
+    await methodChannel.invokeMethod('configurePrinter', {'paperWidth': config.widthPixels});
   }
 }

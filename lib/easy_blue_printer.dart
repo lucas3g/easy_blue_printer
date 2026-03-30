@@ -4,12 +4,14 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:easy_blue_printer/domain/entities/bluetooth_device.dart';
+import 'package:easy_blue_printer/domain/entities/paper_config.dart';
 import 'package:easy_blue_printer/domain/enums/font_size.dart';
 import 'package:easy_blue_printer/domain/enums/text_align.dart';
 
 import 'easy_blue_printer_platform_interface.dart';
 
 export 'domain/entities/bluetooth_device.dart';
+export 'domain/entities/paper_config.dart';
 export 'domain/enums/font_size.dart';
 export 'domain/enums/text_align.dart';
 
@@ -63,5 +65,9 @@ class EasyBluePrinter {
 
   Future<void> requestBluetoothPermissions() async {
     await EasyBluePrinterPlatform.instance.requestBluetoothPermissions();
+  }
+
+  Future<void> configurePrinter(PaperConfig config) async {
+    await EasyBluePrinterPlatform.instance.configurePrinter(config);
   }
 }

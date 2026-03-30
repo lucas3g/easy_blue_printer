@@ -35,4 +35,8 @@ class BluetoothRepositoryImpl(
     override fun printImage(data: ByteArray, align: Int): Boolean {
         return dataSource.printImage(data, align)
     }
+
+    override fun configurePrinter(paperWidth: Int) {
+        dataSource.configurePrinter(paperWidth)
+    }
 }

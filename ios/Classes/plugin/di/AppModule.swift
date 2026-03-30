@@ -14,4 +14,5 @@ public class AppModule {
     public static let feedLineUseCase = FeedLineUseCase(repository: bluetoothRepository)
     public static let isConnectedUseCase = IsConnectedUseCase(repository: bluetoothRepository)
     public static let printImageUseCase = PrintImageUseCase(repository: bluetoothRepository)
+    public static let configurePrinterUseCase = ConfigurePrinterUseCase(repository: bluetoothRepository)
 }

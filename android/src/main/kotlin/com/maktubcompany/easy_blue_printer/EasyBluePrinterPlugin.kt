@@ -176,6 +176,17 @@ class EasyBluePrinterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
           }
         }.start()
         }
+
+      "configurePrinter" -> {
+        val paperWidth = call.argument<Int>("paperWidth")
+        if (paperWidth == null) {
+          result.error("400", "paperWidth is required", null)
+          return
+        }
+        AppModule.configurePrinterUseCase.execute(paperWidth)
+        result.success(null)
+      }
+
       else -> result.notImplemented()
     }
   }

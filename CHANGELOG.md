@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.3.5] - 2026-03-30
+
+### Added
+- **`PaperConfig`** entity to configure paper roll size dynamically (`roll58mm` = 384px, `roll80mm` = 576px, or custom `widthPixels`)
+- **`EasyBluePrinter.configurePrinter(PaperConfig)`** method — call once after connecting to set the roll width used for image printing on both Android and iOS
+
 ## [1.3.4] - 2026-02-14
 - Updated PIX donation key in README
 

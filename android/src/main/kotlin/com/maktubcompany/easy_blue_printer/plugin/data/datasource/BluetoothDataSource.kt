@@ -15,6 +15,11 @@ class BluetoothDataSource {
 
     private var _device: BluetoothDeviceEntity? = null
     private var _socket: BluetoothSocket? = null
+    var paperWidth: Int = 384
+
+    fun configurePrinter(paperWidth: Int) {
+        this.paperWidth = paperWidth
+    }
 
     fun getPairedDevices(): List<BluetoothDeviceEntity> {
         return bluetoothAdapter?.bondedDevices
@@ -148,7 +153,6 @@ class BluetoothDataSource {
 
             if (bmp != null) {
 
-                val paperWidth = 384
                 bmp = Utils.scaleBitmapToWidth(bmp, paperWidth)
 
                 val command: ByteArray = Utils.decodeBitmap(bmp) ?: return false
