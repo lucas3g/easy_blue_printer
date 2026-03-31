@@ -20,6 +20,7 @@ A Flutter plugin for Bluetooth thermal printers. Scan, connect, and print text o
 - Print images from bytes
 - Print empty lines (paper feed)
 - Check connection status
+- Configure paper roll size (58mm, 80mm, or custom) for accurate image printing
 - Works on **Android** and **iOS**
 
 ## Supported Platforms
@@ -88,7 +89,10 @@ final devices = await printer.getPairedDevices();
 // 2. Connect to a device
 final connected = await printer.connectToDevice(devices.first);
 
-// 3. Print text
+// 3. Configure paper roll size (call once after connecting)
+await printer.configurePrinter(PaperConfig.roll80mm); // or PaperConfig.roll58mm
+
+// 4. Print text
 await printer.printData(
   data: 'Hello, World!',
   fontSize: FS.medium,
@@ -96,10 +100,10 @@ await printer.printData(
   bold: true,
 );
 
-// 4. Feed paper
+// 5. Feed paper
 await printer.printEmptyLine(callTimes: 5);
 
-// 5. Disconnect
+// 6. Disconnect
 await printer.disconnectFromDevice();
 ```
 
@@ -220,6 +224,35 @@ await printer.printImage(bytes: bytes, textAlign: TA.center);
 
 ---
 
+### `configurePrinter(config)`
+
+Configures the paper roll size used when printing images. Call this once after connecting to the printer.
+
+```dart
+Future<void> configurePrinter(PaperConfig config)
+```
+
+| Parameter | Type          | Description               |
+|-----------|---------------|---------------------------|
+| `config`  | `PaperConfig` | Paper roll configuration  |
+
+**Example:**
+
+```dart
+// 58mm roll (default)
+await printer.configurePrinter(PaperConfig.roll58mm);
+
+// 80mm roll
+await printer.configurePrinter(PaperConfig.roll80mm);
+
+// Custom width in pixels
+await printer.configurePrinter(PaperConfig(widthPixels: 480));
+```
+
+> Only affects `printImage`. Text printing is handled by the printer firmware and does not require this configuration.
+
+---
+
 ### `isConnected()`
 
 Checks if a printer is currently connected.
@@ -250,6 +283,14 @@ Future<bool> isConnected()
 | `TA.left`   | Left align   |
 | `TA.center` | Center align |
 | `TA.right`  | Right align  |
+
+### `PaperConfig` — Paper Roll Size
+
+| Value / Constructor              | Width    | Description                        |
+|----------------------------------|----------|------------------------------------|
+| `PaperConfig.roll58mm`           | 384 px   | 58mm roll (most common, default)   |
+| `PaperConfig.roll80mm`           | 576 px   | 80mm roll                          |
+| `PaperConfig(widthPixels: n)`    | custom   | Any custom width in pixels         |
 
 ## Complete Example
 
@@ -417,6 +458,7 @@ This project is distributed under the MIT license. See the [LICENSE](LICENSE) fi
 - Imprimir imagens a partir de bytes
 - Imprimir linhas em branco (alimentar papel)
 - Verificar status da conexao
+- Configurar o tamanho da bobina (58mm, 80mm ou customizado) para impressao correta de imagens
 - Funciona no **Android** e **iOS**
 
 ## Plataformas Suportadas
@@ -485,7 +527,10 @@ final devices = await printer.getPairedDevices();
 // 2. Conectar a um dispositivo
 final connected = await printer.connectToDevice(devices.first);
 
-// 3. Imprimir texto
+// 3. Configurar tamanho da bobina (chamar uma vez apos conectar)
+await printer.configurePrinter(PaperConfig.roll80mm); // ou PaperConfig.roll58mm
+
+// 4. Imprimir texto
 await printer.printData(
   data: 'Ola, Mundo!',
   fontSize: FS.medium,
@@ -493,10 +538,10 @@ await printer.printData(
   bold: true,
 );
 
-// 4. Alimentar papel
+// 5. Alimentar papel
 await printer.printEmptyLine(callTimes: 5);
 
-// 5. Desconectar
+// 6. Desconectar
 await printer.disconnectFromDevice();
 ```
 
@@ -617,6 +662,35 @@ await printer.printImage(bytes: bytes, textAlign: TA.center);
 
 ---
 
+### `configurePrinter(config)`
+
+Configura o tamanho da bobina utilizado na impressao de imagens. Chame uma vez apos conectar na impressora.
+
+```dart
+Future<void> configurePrinter(PaperConfig config)
+```
+
+| Parametro | Tipo          | Descricao                    |
+|-----------|---------------|------------------------------|
+| `config`  | `PaperConfig` | Configuracao da bobina       |
+
+**Exemplo:**
+
+```dart
+// Bobina 58mm (padrao)
+await printer.configurePrinter(PaperConfig.roll58mm);
+
+// Bobina 80mm
+await printer.configurePrinter(PaperConfig.roll80mm);
+
+// Largura customizada em pixels
+await printer.configurePrinter(PaperConfig(widthPixels: 480));
+```
+
+> Afeta apenas `printImage`. A impressao de texto e controlada pelo firmware da impressora e nao precisa desta configuracao.
+
+---
+
 ### `isConnected()`
 
 Verifica se uma impressora esta conectada.
@@ -647,6 +721,14 @@ Future<bool> isConnected()
 | `TA.left`   | Alinhar a esquerda   |
 | `TA.center` | Centralizar          |
 | `TA.right`  | Alinhar a direita    |
+
+### `PaperConfig` — Tamanho da Bobina
+
+| Valor / Construtor               | Largura  | Descricao                               |
+|----------------------------------|----------|-----------------------------------------|
+| `PaperConfig.roll58mm`           | 384 px   | Bobina de 58mm (mais comum, padrao)     |
+| `PaperConfig.roll80mm`           | 576 px   | Bobina de 80mm                          |
+| `PaperConfig(widthPixels: n)`    | custom   | Qualquer largura customizada em pixels  |
 
 ## Exemplo Completo
 

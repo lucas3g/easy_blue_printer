@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.3.6] - 2026-03-31
+
+### Changed
+- Updated README with `PaperConfig` documentation (API reference, quick start, enums table) in English and Portuguese
+
 ## [1.3.5] - 2026-03-30
 
 ### Added
