@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.4.4] - 2026-04-07
+
+### Fixed
+- **Corrupted output when mixing text and image**: `printImage` was sending data in multiple separate socket writes (text flush → image chunks → newlines → reset), creating timing gaps that confused the printer. `printImage` now only appends the ESC/POS image bytes (alignment + bitmap + trailing feed + reset) to the print buffer — no socket IO. `commitPrint` then sends the entire buffer (preceding text + image + following text) as one continuous stream via the existing chunked sender, eliminating all gaps.
+- Removed 200ms sleep inside `printImage` — it was compensating for the gaps between separate write operations, which no longer exist.
+
 ## [1.4.3] - 2026-04-07
 
 ### Fixed

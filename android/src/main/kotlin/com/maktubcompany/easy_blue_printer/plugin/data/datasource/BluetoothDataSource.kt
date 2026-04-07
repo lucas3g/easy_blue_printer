@@ -149,48 +149,33 @@ class BluetoothDataSource {
         }
     }
 
+    // Encodes the image to ESC/POS bytes and appends them to printBuffer.
+    // No socket IO happens here — everything is sent as one continuous stream
+    // by commitPrint(), together with any preceding and following text.
     fun printImage(data: ByteArray, align: Int): Boolean {
-        return try {
-            // Send all pending text before the image so the printer
-            // receives one uninterrupted stream.
-            flushPrintBuffer()
+        var bmp = BitmapFactory.decodeByteArray(data, 0, data.size)
 
-            var bmp = BitmapFactory.decodeByteArray(data, 0, data.size)
+        if (bmp != null) {
+            bmp = Utils.scaleBitmapToWidth(bmp, paperWidth)
 
-            if (bmp != null) {
-                bmp = Utils.scaleBitmapToWidth(bmp, paperWidth)
+            val command: ByteArray = Utils.decodeBitmap(bmp) ?: return false
 
-                val command: ByteArray = Utils.decodeBitmap(bmp) ?: return false
-
-                val alignBytes = when (align) {
-                    0 -> byteArrayOf(0x1B, 0x61, 0x00)
-                    1 -> byteArrayOf(0x1B, 0x61, 0x01)
-                    2 -> byteArrayOf(0x1B, 0x61, 0x02)
-                    else -> byteArrayOf()
-                }
-                _socket?.outputStream?.write(alignBytes)
-                // Do not flush here — alignment bytes are sent together
-                // with the first image chunk inside sendChunked().
-                sendChunked(command)
-
-                // Wait for the printer to finish processing the image
-                Thread.sleep(200)
-
-                // Feed empty lines for paper tear-off
-                _socket?.outputStream?.write("\n\n\n\n".toByteArray())
-                _socket?.outputStream?.flush()
-
-                // Reset printer to text mode after image
-                _socket?.outputStream?.write(byteArrayOf(0x1B, 0x40))
-                _socket?.outputStream?.flush()
-
-                true
-            } else {
-                Log.e("Print Photo error", "The file doesn't exist")
-                false
+            val alignBytes = when (align) {
+                0 -> byteArrayOf(0x1B, 0x61, 0x00)
+                1 -> byteArrayOf(0x1B, 0x61, 0x01)
+                2 -> byteArrayOf(0x1B, 0x61, 0x02)
+                else -> byteArrayOf()
             }
-        } catch (e: IOException) {
-            throw e
+            printBuffer.write(alignBytes)
+            printBuffer.write(command)
+            // Paper feed for tear-off
+            printBuffer.write(byteArrayOf(0x0A, 0x0A, 0x0A, 0x0A))
+            // Reset printer to text mode so subsequent text commands work correctly
+            printBuffer.write(byteArrayOf(0x1B, 0x40))
+            return true
+        } else {
+            Log.e("Print Photo error", "The file doesn't exist")
+            return false
         }
     }
 }

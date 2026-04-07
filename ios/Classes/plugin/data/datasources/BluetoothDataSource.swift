@@ -146,33 +146,21 @@ public class BluetoothDataSource: NSObject, CBCentralManagerDelegate, CBPeripher
         self.paperWidth = paperWidth
     }
 
+    // Encodes the image to ESC/POS bytes and appends them to printBuffer.
+    // No socket IO happens here — everything is sent as one continuous stream
+    // by commitPrint(), together with any preceding and following text.
     public func printImage(data: Data, align: Int) -> Bool {
-        // Send all pending text before the image so the printer
-        // receives one uninterrupted stream.
-        _ = flushPrintBuffer()
-
         guard let image = UIImage(data: data) else { return false }
-
         guard let scaledImage = Utils.scaleImage(image, toWidth: paperWidth) else { return false }
         guard let command = Utils.decodeBitmap(scaledImage) else { return false }
 
-        var buffer = Data()
-        buffer.append(contentsOf: getAlignmentData(for: align))
-        buffer.append(command)
-
-        let imageResult = writeImageData(buffer)
-
-        // Wait for the printer to finish processing the image
-        Thread.sleep(forTimeInterval: 0.2)
-
-        // Feed empty lines for paper tear-off
-        _ = writeData(Data([0x0A, 0x0A, 0x0A, 0x0A]))
-
-        // Reset printer to text mode after image
-        let resetCommand = Data([0x1B, 0x40])
-        _ = writeData(resetCommand)
-
-        return imageResult
+        printBuffer.append(contentsOf: getAlignmentData(for: align))
+        printBuffer.append(command)
+        // Paper feed for tear-off
+        printBuffer.append(contentsOf: [0x0A, 0x0A, 0x0A, 0x0A])
+        // Reset printer to text mode so subsequent text commands work correctly
+        printBuffer.append(contentsOf: [0x1B, 0x40])
+        return true
     }
 
     // MARK: - Private helpers
@@ -195,30 +183,6 @@ public class BluetoothDataSource: NSObject, CBCentralManagerDelegate, CBPeripher
 
             peripheral.writeValue(chunk, for: characteristic, type: writeType)
             Thread.sleep(forTimeInterval: 0.02)
-
-            offset = end
-        }
-        return true
-    }
-
-    private func writeData(_ data: Data) -> Bool {
-        guard let peripheral = connectedPeripheral,
-              let characteristic = writableCharacteristic else { return false }
-
-        let writeType: CBCharacteristicWriteType = characteristic.properties.contains(.writeWithoutResponse)
-            ? .withoutResponse
-            : .withResponse
-
-        let mtu = peripheral.maximumWriteValueLength(for: writeType)
-        let chunkSize = max(mtu, 20)
-        var offset = 0
-
-        while offset < data.count {
-            let end = min(offset + chunkSize, data.count)
-            let chunk = data.subdata(in: offset..<end)
-
-            peripheral.writeValue(chunk, for: characteristic, type: writeType)
-            Thread.sleep(forTimeInterval: 0.01)
 
             offset = end
         }
