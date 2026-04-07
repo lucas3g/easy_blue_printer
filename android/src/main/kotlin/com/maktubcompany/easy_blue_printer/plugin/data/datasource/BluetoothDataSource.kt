@@ -168,8 +168,8 @@ class BluetoothDataSource {
                     else -> byteArrayOf()
                 }
                 _socket?.outputStream?.write(alignBytes)
-                _socket?.outputStream?.flush()
-
+                // Do not flush here — alignment bytes are sent together
+                // with the first image chunk inside sendChunked().
                 sendChunked(command)
 
                 // Wait for the printer to finish processing the image

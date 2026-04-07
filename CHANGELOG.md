@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.4.1] - 2026-04-07
+
+### Fixed
+- **Android**: Image printing regression introduced in 1.4.0 — alignment bytes were being flushed as a separate Bluetooth packet before the image data, which some printer firmware could not handle. They are now sent together with the first image chunk, restoring the original behavior.
+
 ## [1.4.0] - 2026-04-07
 
 ### Changed (breaking improvement)
