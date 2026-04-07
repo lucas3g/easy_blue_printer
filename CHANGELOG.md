@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.4.2] - 2026-04-07
+
+### Fixed
+- **`printEmptyLine` freeze**: flushing all accumulated text inside `printEmptyLine` caused a large burst that triggered RFCOMM flow control, hanging the printer. `printEmptyLine` now only appends newlines to the buffer — the buffer is sent as one stream by `commitPrint()` when the queue empties (or by `printImage()` before image data).
+
 ## [1.4.1] - 2026-04-07
 
 ### Fixed

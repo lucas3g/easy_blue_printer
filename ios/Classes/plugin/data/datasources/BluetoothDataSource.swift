@@ -114,11 +114,12 @@ public class BluetoothDataSource: NSObject, CBCentralManagerDelegate, CBPeripher
         return true
     }
 
-    // Appends newlines to buffer then sends everything accumulated so far.
+    // Appends newlines to buffer. The buffer is flushed by commitPrint()
+    // when the Dart queue empties, or by printImage() before image data.
     public func printEmptyLine(callTimes: Int) -> Bool {
         let newlines = Data(repeating: 0x0A, count: callTimes)
         printBuffer.append(newlines)
-        return flushPrintBuffer()
+        return true
     }
 
     // Sends all buffered bytes to the printer. Called by the Dart queue

@@ -84,11 +84,12 @@ class BluetoothDataSource {
         return true
     }
 
-    // Appends newlines to buffer then sends everything accumulated so far.
+    // Appends newlines to buffer. The buffer is flushed by commitPrint()
+    // when the Dart queue empties, or by printImage() before image data.
     fun printEmptyLine(callTimes: Int): Boolean {
         val newlines = ByteArray(callTimes) { 0x0A }
         printBuffer.write(newlines)
-        return flushPrintBuffer()
+        return true
     }
 
     // Sends all buffered bytes to the printer. Called by the Dart queue
