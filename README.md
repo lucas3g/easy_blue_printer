@@ -266,6 +266,28 @@ Future<bool> isConnected()
 
 ---
 
+### `commandDelay`
+
+Configurable delay applied between consecutive print commands. The built-in queue already serializes all commands; this delay gives the printer extra time to process each command before the next one arrives.
+
+```dart
+Duration commandDelay  // default: Duration(milliseconds: 100)
+```
+
+**Example:**
+
+```dart
+// Increase for slower printers that still show corrupted output
+printer.commandDelay = const Duration(milliseconds: 150);
+
+// Disable for fast printers that don't need it
+printer.commandDelay = Duration.zero;
+```
+
+> Only applies between queued print commands. Does not add latency after the last command in a batch.
+
+---
+
 ## Enums
 
 ### `FS` — Font Size
@@ -702,6 +724,28 @@ Future<bool> isConnected()
 ```
 
 **Retorno:** `true` se estiver conectado.
+
+---
+
+### `commandDelay`
+
+Delay configuravel aplicado entre comandos de impressao consecutivos. A fila interna ja serializa todos os comandos; este delay da tempo extra para a impressora processar cada comando antes do proximo chegar.
+
+```dart
+Duration commandDelay  // padrao: Duration(milliseconds: 100)
+```
+
+**Exemplo:**
+
+```dart
+// Aumentar para impressoras mais lentas que ainda mostram caracteres invalidos
+printer.commandDelay = const Duration(milliseconds: 150);
+
+// Desativar para impressoras rapidas que nao precisam
+printer.commandDelay = Duration.zero;
+```
+
+> Aplicado apenas entre comandos enfileirados. Nao adiciona latencia apos o ultimo comando de um lote.
 
 ---
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.9] - 2026-04-07
+
+### Added
+- `EasyBluePrinter.instance.commandDelay` — configurable delay between consecutive print commands (default: 100ms). Increase if your printer still shows corrupted output (e.g. `commandDelay = Duration(milliseconds: 150)`). Set to `Duration.zero` to disable.
+
+### Fixed
+- The inter-command delay is only applied when there are more jobs in the queue, so the last command does not add unnecessary latency
+
 ## [1.3.8] - 2026-04-07
 
 ### Fixed

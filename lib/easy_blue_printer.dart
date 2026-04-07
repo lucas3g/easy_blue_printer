@@ -29,6 +29,14 @@ class EasyBluePrinter {
   final Queue<_PrintJob> _queue = Queue();
   bool _isProcessing = false;
 
+  /// Delay applied between consecutive print commands to allow the printer
+  /// to process each command before the next one arrives.
+  ///
+  /// The default of 100ms works for most printers. If you still see corrupted
+  /// output, increase this value (e.g. [Duration(milliseconds: 150)]).
+  /// Set to [Duration.zero] to disable.
+  Duration commandDelay = const Duration(milliseconds: 100);
+
   Future<T> _enqueue<T>(Future<T> Function() job) {
     final completer = Completer<T>();
     _queue.add(_PrintJob(() async {
@@ -47,6 +55,9 @@ class EasyBluePrinter {
     _isProcessing = true;
     while (_queue.isNotEmpty) {
       await _queue.removeFirst().run();
+      if (_queue.isNotEmpty && commandDelay > Duration.zero) {
+        await Future.delayed(commandDelay);
+      }
     }
     _isProcessing = false;
   }
