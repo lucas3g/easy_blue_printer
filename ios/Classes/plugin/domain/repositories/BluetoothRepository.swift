@@ -9,4 +9,5 @@ public protocol BluetoothRepository {
     func isConnected() -> Bool
     func printImage(data: Data, align: Int) -> Bool
     func configurePrinter(paperWidth: Int)
+    func commitPrint() -> Bool
 }

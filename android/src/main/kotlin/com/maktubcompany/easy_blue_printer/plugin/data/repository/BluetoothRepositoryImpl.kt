@@ -39,4 +39,8 @@ class BluetoothRepositoryImpl(
     override fun configurePrinter(paperWidth: Int) {
         dataSource.configurePrinter(paperWidth)
     }
+
+    override fun commitPrint(): Boolean {
+        return dataSource.commitPrint()
+    }
 }

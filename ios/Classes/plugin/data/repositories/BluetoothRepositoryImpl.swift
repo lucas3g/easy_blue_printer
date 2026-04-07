@@ -47,4 +47,8 @@ public class BluetoothRepositoryImpl: BluetoothRepository {
     public func configurePrinter(paperWidth: Int) {
         dataSource.configurePrinter(paperWidth: paperWidth)
     }
+
+    public func commitPrint() -> Bool {
+        return dataSource.commitPrint()
+    }
 }

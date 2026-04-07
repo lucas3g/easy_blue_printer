@@ -11,6 +11,7 @@ import com.maktubcompany.easy_blue_printer.plugin.domain.usecase.FeedLineUseCase
 import com.maktubcompany.easy_blue_printer.plugin.domain.usecase.PrintUseCase
 import com.maktubcompany.easy_blue_printer.plugin.domain.usecase.GetPairedDevices
 import com.maktubcompany.easy_blue_printer.plugin.domain.usecase.PrintImageUseCase
+import com.maktubcompany.easy_blue_printer.plugin.domain.usecase.CommitPrintUseCase
 
 object AppModule {
     private val bluetoothDataSource = BluetoothDataSource()
@@ -24,4 +25,5 @@ object AppModule {
     val isConnectedUseCase = DeviceIsConneceted(bluetoothRepository)
     val printImageUseCase = PrintImageUseCase(bluetoothRepository)
     val configurePrinterUseCase = ConfigurePrinterUseCase(bluetoothRepository)
+    val commitPrintUseCase = CommitPrintUseCase(bluetoothRepository)
 }

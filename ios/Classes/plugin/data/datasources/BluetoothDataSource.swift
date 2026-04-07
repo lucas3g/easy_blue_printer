@@ -16,6 +16,11 @@ public class BluetoothDataSource: NSObject, CBCentralManagerDelegate, CBPeripher
     private var pendingScanCompletion: (([BluetoothDeviceEntity]) -> Void)?
     private var paperWidth: Int = 384
 
+    // Accumulates ESC/POS bytes from printData/printEmptyLine calls.
+    // All buffered data is sent as one continuous stream when commitPrint,
+    // printEmptyLine, or printImage is called.
+    private var printBuffer = Data()
+
     override init() {
         super.init()
         bluetoothManager = CBCentralManager(delegate: self, queue: bluetoothQueue)
@@ -96,22 +101,38 @@ public class BluetoothDataSource: NSObject, CBCentralManagerDelegate, CBPeripher
         return true
     }
 
+    // Builds ESC/POS bytes and appends to printBuffer — no network IO.
+    // Data is only sent when commitPrint(), printEmptyLine(), or printImage() is called.
     public func printData(data: String, size: Int, align: Int, bold: Bool) -> Bool {
-        var buffer = Data()
-        buffer.append(contentsOf: getAlignmentData(for: align))
-        buffer.append(contentsOf: bold ? [0x1B, 0x47, 0x01] : [0x1B, 0x47, 0x00])
-        buffer.append(contentsOf: getFontSizeData(for: size))
-        buffer.append(data.data(using: .utf8) ?? Data())
-        buffer.append(contentsOf: [0x0A])
-        return writeData(buffer)
+        var bytes = Data()
+        bytes.append(contentsOf: getAlignmentData(for: align))
+        bytes.append(contentsOf: bold ? [0x1B, 0x47, 0x01] : [0x1B, 0x47, 0x00])
+        bytes.append(contentsOf: getFontSizeData(for: size))
+        bytes.append(data.data(using: .utf8) ?? Data())
+        bytes.append(contentsOf: [0x0A])
+        printBuffer.append(bytes)
+        return true
     }
 
+    // Appends newlines to buffer then sends everything accumulated so far.
     public func printEmptyLine(callTimes: Int) -> Bool {
-        var buffer = Data()
-        for _ in 0..<callTimes {
-            buffer.append(contentsOf: [0x0A])
-        }
-        return writeData(buffer)
+        let newlines = Data(repeating: 0x0A, count: callTimes)
+        printBuffer.append(newlines)
+        return flushPrintBuffer()
+    }
+
+    // Sends all buffered bytes to the printer. Called by the Dart queue
+    // when all enqueued jobs are done (handles text-only receipts).
+    public func commitPrint() -> Bool {
+        return flushPrintBuffer()
+    }
+
+    // Sends buffered bytes as one continuous stream — same chunking used for images.
+    private func flushPrintBuffer() -> Bool {
+        if printBuffer.isEmpty { return true }
+        let bytes = printBuffer
+        printBuffer = Data()
+        return writeImageData(bytes)
     }
 
     public func isConnected() -> Bool {
@@ -125,6 +146,10 @@ public class BluetoothDataSource: NSObject, CBCentralManagerDelegate, CBPeripher
     }
 
     public func printImage(data: Data, align: Int) -> Bool {
+        // Send all pending text before the image so the printer
+        // receives one uninterrupted stream.
+        _ = flushPrintBuffer()
+
         guard let image = UIImage(data: data) else { return false }
 
         guard let scaledImage = Utils.scaleImage(image, toWidth: paperWidth) else { return false }

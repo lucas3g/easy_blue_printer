@@ -95,6 +95,14 @@ public class EasyBluePrinterPlugin: NSObject, FlutterPlugin {
                 result(FlutterError(code: "400", message: "paperWidth is required", details: nil))
             }
 
+        case "commitPrint":
+            printQueue.async {
+                let success = AppModule.commitPrintUseCase.execute()
+                DispatchQueue.main.async {
+                    result(success)
+                }
+            }
+
         case "requestBluetoothPermissions":
             result("Permissions are handled via Info.plist on iOS")
 

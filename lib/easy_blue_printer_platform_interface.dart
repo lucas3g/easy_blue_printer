@@ -46,4 +46,6 @@ abstract class EasyBluePrinterPlatform extends PlatformInterface {
   Future<void> requestBluetoothPermissions();
 
   Future<void> configurePrinter(PaperConfig config);
+
+  Future<void> commitPrint();
 }

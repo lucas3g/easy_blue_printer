@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.4.0] - 2026-04-07
+
+### Changed (breaking improvement)
+- **Print buffering**: `printData` and `printEmptyLine` no longer send data immediately. Instead, bytes are accumulated in an in-memory buffer and transmitted as a single continuous stream when:
+  - `printEmptyLine` is called (natural flush point at end of receipt)
+  - `printImage` is called (text is flushed first, then image is sent)
+  - The print queue empties (automatic flush for text-only receipts)
+- This eliminates the root cause of corrupted output: the printer now receives one uninterrupted byte stream instead of many small bursts with gaps between them
+- Removed `commandDelay` (no longer needed)
+- Added internal `commitPrint` mechanism (called automatically — no API change required)
+
+### Fixed
+- Corrupted characters when printing PDFs with multiple text items and/or images
+
 ## [1.3.9] - 2026-04-07
 
 ### Added

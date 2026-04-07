@@ -63,4 +63,9 @@ class MethodChannelEasyBluePrinter extends EasyBluePrinterPlatform {
   Future<void> configurePrinter(PaperConfig config) async {
     await methodChannel.invokeMethod('configurePrinter', {'paperWidth': config.widthPixels});
   }
+
+  @override
+  Future<void> commitPrint() async {
+    await methodChannel.invokeMethod('commitPrint');
+  }
 }

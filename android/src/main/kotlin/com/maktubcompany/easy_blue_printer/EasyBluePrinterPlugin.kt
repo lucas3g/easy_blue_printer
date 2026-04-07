@@ -189,6 +189,17 @@ class EasyBluePrinterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         result.success(null)
       }
 
+      "commitPrint" -> {
+        printExecutor.submit {
+          try {
+            val committed = AppModule.commitPrintUseCase.execute()
+            result.success(committed)
+          } catch (e: Exception) {
+            result.error("PRINT_ERROR", e.message, null)
+          }
+        }
+      }
+
       else -> result.notImplemented()
     }
   }
