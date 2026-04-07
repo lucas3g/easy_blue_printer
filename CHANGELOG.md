@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.7] - 2026-04-07
+
+### Fixed
+- **Print queue**: Multiple sequential print calls (`printData`, `printImage`, `printEmptyLine`) are now processed one at a time through an internal queue, eliminating corrupted characters caused by buffer overflow on the printer
+- **Android**: Replaced independent threads with a `SingleThreadExecutor` for all print operations, ensuring native-level serialization
+- **iOS**: Replaced `DispatchQueue.global()` with a dedicated serial queue for print operations, ensuring native-level serialization
+- No more need for manual delays (`Future.delayed`) between print calls in the consuming app
+
 ## [1.3.6] - 2026-03-31
 
 ### Changed

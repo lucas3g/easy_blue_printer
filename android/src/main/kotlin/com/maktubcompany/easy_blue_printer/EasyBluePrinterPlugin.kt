@@ -15,11 +15,13 @@ import io.flutter.plugin.common.MethodChannel.Result
 import com.maktubcompany.easy_blue_printer.plugin.di.AppModule
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
+import java.util.concurrent.Executors
 
 /** EasyBluePrinterPlugin */
 class EasyBluePrinterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
   private lateinit var channel : MethodChannel
   private var activity: Activity? = null
+  private val printExecutor = Executors.newSingleThreadExecutor()
 
   override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
     channel = MethodChannel(flutterPluginBinding.binaryMessenger, "easy_blue_printer")
@@ -90,14 +92,14 @@ class EasyBluePrinterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
           return
         }
 
-        Thread {
+        printExecutor.submit {
           try {
             val printed = AppModule.printUseCase.execute(data, fontSize, align, bold)
             result.success(printed)
           } catch (e: Exception) {
             result.error("PRINT_ERROR", e.message, null)
           }
-        }.start()
+        }
       }
 
       "printEmptyLine" -> {
@@ -112,14 +114,14 @@ class EasyBluePrinterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
           return
         }
 
-        Thread {
+        printExecutor.submit {
           try {
             val printed = AppModule.feedLineUseCase.execute(callTimes)
             result.success(printed)
           } catch (e: Exception) {
             result.error("PRINT_ERROR", e.message, null)
           }
-        }.start()
+        }
       }
 
       "disconnectFromDevice" -> {
@@ -167,14 +169,14 @@ class EasyBluePrinterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
           return
         }
 
-        Thread {
+        printExecutor.submit {
           try {
-              val printed = AppModule.printImageUseCase.execute(data, align)
-              result.success(printed)
+            val printed = AppModule.printImageUseCase.execute(data, align)
+            result.success(printed)
           } catch (e: Exception) {
-              result.error("PRINT_ERROR", e.message, null)
+            result.error("PRINT_ERROR", e.message, null)
           }
-        }.start()
+        }
         }
 
       "configurePrinter" -> {

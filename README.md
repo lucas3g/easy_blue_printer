@@ -21,6 +21,7 @@ A Flutter plugin for Bluetooth thermal printers. Scan, connect, and print text o
 - Print empty lines (paper feed)
 - Check connection status
 - Configure paper roll size (58mm, 80mm, or custom) for accurate image printing
+- **Built-in print queue** — sequential, non-concurrent writes with no manual delays needed
 - Works on **Android** and **iOS**
 
 ## Supported Platforms
@@ -459,6 +460,7 @@ This project is distributed under the MIT license. See the [LICENSE](LICENSE) fi
 - Imprimir linhas em branco (alimentar papel)
 - Verificar status da conexao
 - Configurar o tamanho da bobina (58mm, 80mm ou customizado) para impressao correta de imagens
+- **Fila de impressao embutida** — envios sequenciais e nao concorrentes, sem necessidade de delays manuais
 - Funciona no **Android** e **iOS**
 
 ## Plataformas Suportadas

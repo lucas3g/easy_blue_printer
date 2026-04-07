@@ -1,5 +1,7 @@
 library;
 
+import 'dart:async';
+import 'dart:collection';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -24,6 +26,31 @@ class EasyBluePrinter {
 
   static EasyBluePrinter get instance => _instance;
 
+  final Queue<_PrintJob> _queue = Queue();
+  bool _isProcessing = false;
+
+  Future<T> _enqueue<T>(Future<T> Function() job) {
+    final completer = Completer<T>();
+    _queue.add(_PrintJob(() async {
+      try {
+        completer.complete(await job());
+      } catch (e, st) {
+        completer.completeError(e, st);
+      }
+    }));
+    _processQueue();
+    return completer.future;
+  }
+
+  Future<void> _processQueue() async {
+    if (_isProcessing) return;
+    _isProcessing = true;
+    while (_queue.isNotEmpty) {
+      await _queue.removeFirst().run();
+    }
+    _isProcessing = false;
+  }
+
   Future<List<BluetoothDevice>> getPairedDevices() async {
     return await EasyBluePrinterPlatform.instance.getPairedDevices();
   }
@@ -40,27 +67,25 @@ class EasyBluePrinter {
       {required String data,
       required FS fontSize,
       required TA textAlign,
-      required bool bold}) async {
-    return await EasyBluePrinterPlatform.instance.printData(
-      data: data,
-      fontSize: fontSize,
-      textAlign: textAlign,
-      bold: bold,
-    );
+      required bool bold}) {
+    return _enqueue(() => EasyBluePrinterPlatform.instance.printData(
+          data: data,
+          fontSize: fontSize,
+          textAlign: textAlign,
+          bold: bold,
+        ));
   }
 
-  Future<void> printEmptyLine({required int callTimes}) async {
-    await EasyBluePrinterPlatform.instance.printEmptyLine(callTimes: callTimes);
+  Future<void> printEmptyLine({required int callTimes}) {
+    return _enqueue(() => EasyBluePrinterPlatform.instance.printEmptyLine(callTimes: callTimes));
   }
 
   Future<bool> isConnected() async {
     return await EasyBluePrinterPlatform.instance.isConnected();
   }
 
-  Future<bool> printImage(
-      {required Uint8List bytes, required TA textAlign}) async {
-    return await EasyBluePrinterPlatform.instance
-        .printImage(bytes: bytes, textAlign: textAlign);
+  Future<bool> printImage({required Uint8List bytes, required TA textAlign}) {
+    return _enqueue(() => EasyBluePrinterPlatform.instance.printImage(bytes: bytes, textAlign: textAlign));
   }
 
   Future<void> requestBluetoothPermissions() async {
@@ -70,4 +95,9 @@ class EasyBluePrinter {
   Future<void> configurePrinter(PaperConfig config) async {
     await EasyBluePrinterPlatform.instance.configurePrinter(config);
   }
+}
+
+class _PrintJob {
+  final Future<void> Function() run;
+  const _PrintJob(this.run);
 }

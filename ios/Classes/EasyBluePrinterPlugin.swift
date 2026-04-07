@@ -3,6 +3,8 @@ import UIKit
 
 public class EasyBluePrinterPlugin: NSObject, FlutterPlugin {
 
+    private let printQueue = DispatchQueue(label: "com.maktubcompany.easy_blue_printer.print")
+
     public static func register(with registrar: FlutterPluginRegistrar) {
         let channel = FlutterMethodChannel(name: "easy_blue_printer", binaryMessenger: registrar.messenger())
         let instance = EasyBluePrinterPlugin()
@@ -37,7 +39,7 @@ public class EasyBluePrinterPlugin: NSObject, FlutterPlugin {
                let fontSize = args["fontSize"] as? Int,
                let textAlign = args["textAlign"] as? Int,
                let bold = args["bold"] as? Bool {
-                DispatchQueue.global().async {
+                printQueue.async {
                     let success = AppModule.printUseCase.execute(data: data, size: fontSize, align: textAlign, bold: bold)
                     DispatchQueue.main.async {
                         result(success)
@@ -49,7 +51,7 @@ public class EasyBluePrinterPlugin: NSObject, FlutterPlugin {
 
         case "printEmptyLine":
             if let args = call.arguments as? [String: Any], let callTimes = args["callTimes"] as? Int {
-                DispatchQueue.global().async {
+                printQueue.async {
                     let success = AppModule.feedLineUseCase.execute(callTimes: callTimes)
                     DispatchQueue.main.async {
                         result(success)
@@ -75,7 +77,7 @@ public class EasyBluePrinterPlugin: NSObject, FlutterPlugin {
             if let args = call.arguments as? [String: Any],
                let data = args["data"] as? FlutterStandardTypedData,
                let textAlign = args["textAlign"] as? Int {
-                DispatchQueue.global().async {
+                printQueue.async {
                     let success = AppModule.printImageUseCase.execute(data: data.data, align: textAlign)
                     DispatchQueue.main.async {
                         result(success)
