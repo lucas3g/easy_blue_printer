@@ -45,12 +45,17 @@ class EasyBluePrinter {
   Future<void> _processQueue() async {
     if (_isProcessing) return;
     _isProcessing = true;
-    while (_queue.isNotEmpty) {
-      await _queue.removeFirst().run();
-    }
-    // When the queue empties, flush any buffered bytes that were not yet
-    // sent (e.g. text-only receipts with no printEmptyLine at the end).
-    await EasyBluePrinterPlatform.instance.commitPrint();
+    // do-while ensures that if new jobs arrive while commitPrint is running
+    // (e.g. user code awaits printData and immediately enqueues printEmptyLine),
+    // those jobs are picked up instead of staying stuck in the queue forever.
+    do {
+      while (_queue.isNotEmpty) {
+        await _queue.removeFirst().run();
+      }
+      // When the queue empties, flush any buffered bytes that were not yet
+      // sent (e.g. text-only receipts with no printEmptyLine at the end).
+      await EasyBluePrinterPlatform.instance.commitPrint();
+    } while (_queue.isNotEmpty);
     _isProcessing = false;
   }
 
@@ -66,11 +71,7 @@ class EasyBluePrinter {
     return await EasyBluePrinterPlatform.instance.disconnectFromDevice();
   }
 
-  Future<bool> printData(
-      {required String data,
-      required FS fontSize,
-      required TA textAlign,
-      required bool bold}) {
+  Future<bool> printData({required String data, required FS fontSize, required TA textAlign, required bool bold}) {
     return _enqueue(() => EasyBluePrinterPlatform.instance.printData(
           data: data,
           fontSize: fontSize,

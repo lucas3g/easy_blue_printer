@@ -191,142 +191,151 @@ class _PrinterPageState extends State<PrinterPage> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-          // Device list section
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-            child: Card(
-              clipBehavior: Clip.antiAlias,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 8, 4),
-                    child: Row(
-                      children: [
-                        Icon(Icons.bluetooth,
-                            size: 20, color: colorScheme.primary),
-                        const SizedBox(width: 8),
-                        Text('Paired Devices',
-                            style: Theme.of(context).textTheme.titleMedium),
-                        const Spacer(),
-                        IconButton(
-                          icon: _isScanning
-                              ? SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                      strokeWidth: 2),
-                                )
-                              : const Icon(Icons.refresh),
-                          tooltip: 'Scan devices',
-                          onPressed: _isScanning ? null : _scan,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Divider(height: 1),
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxHeight: 240),
-                    child: _buildDeviceList(),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          // Actions section
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.tune, size: 20, color: colorScheme.primary),
-                        const SizedBox(width: 8),
-                        Text('Actions',
-                            style: Theme.of(context).textTheme.titleMedium),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Icon(Icons.receipt_long, size: 18, color: colorScheme.onSurfaceVariant),
-                        const SizedBox(width: 8),
-                        Text('Paper roll:', style: Theme.of(context).textTheme.bodyMedium),
-                        const SizedBox(width: 12),
-                        SegmentedButton<PaperConfig>(
-                          segments: const [
-                            ButtonSegment(
-                              value: PaperConfig.roll58mm,
-                              label: Text('58 mm'),
-                            ),
-                            ButtonSegment(
-                              value: PaperConfig.roll80mm,
-                              label: Text('80 mm'),
+      body: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              // Device list section
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                child: Card(
+                  clipBehavior: Clip.antiAlias,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 8, 4),
+                        child: Row(
+                          children: [
+                            Icon(Icons.bluetooth,
+                                size: 20, color: colorScheme.primary),
+                            const SizedBox(width: 8),
+                            Text('Paired Devices',
+                                style: Theme.of(context).textTheme.titleMedium),
+                            const Spacer(),
+                            IconButton(
+                              icon: _isScanning
+                                  ? SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                          strokeWidth: 2),
+                                    )
+                                  : const Icon(Icons.refresh),
+                              tooltip: 'Scan devices',
+                              onPressed: _isScanning ? null : _scan,
                             ),
                           ],
-                          selected: {_paperConfig},
-                          onSelectionChanged: (selection) =>
-                              _onPaperConfigChanged(selection.first),
-                          style: const ButtonStyle(
-                            visualDensity: VisualDensity.compact,
-                          ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        FilledButton.icon(
-                          onPressed: _isScanning || _isLoading ? null : _scan,
-                          icon: const Icon(Icons.search),
-                          label: const Text('Scan'),
-                        ),
-                        FilledButton.tonalIcon(
-                          onPressed:
-                              _isConnected && !_isLoading ? _printText : null,
-                          icon: const Icon(Icons.print),
-                          label: const Text('Print Text'),
-                        ),
-                        FilledButton.tonalIcon(
-                          onPressed:
-                              _isConnected && !_isLoading ? _printImage : null,
-                          icon: const Icon(Icons.image),
-                          label: const Text('Print Image'),
-                        ),
-                        OutlinedButton.icon(
-                          onPressed: !_isLoading ? _testConnection : null,
-                          icon: const Icon(Icons.wifi_tethering),
-                          label: const Text('Test'),
-                        ),
-                        if (_isConnected)
-                          FilledButton.icon(
-                            onPressed: _isLoading ? null : _disconnect,
-                            icon: const Icon(Icons.link_off),
-                            label: const Text('Disconnect'),
-                            style: FilledButton.styleFrom(
-                              backgroundColor: colorScheme.error,
-                              foregroundColor: colorScheme.onError,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ],
+                      ),
+                      const Divider(height: 1),
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxHeight: 240),
+                        child: _buildDeviceList(),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
+
+              // Actions section
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.tune,
+                                size: 20, color: colorScheme.primary),
+                            const SizedBox(width: 8),
+                            Text('Actions',
+                                style: Theme.of(context).textTheme.titleMedium),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Icon(Icons.receipt_long,
+                                size: 18, color: colorScheme.onSurfaceVariant),
+                            const SizedBox(width: 8),
+                            Text('Paper roll:',
+                                style: Theme.of(context).textTheme.bodyMedium),
+                            const SizedBox(width: 12),
+                            SegmentedButton<PaperConfig>(
+                              segments: const [
+                                ButtonSegment(
+                                  value: PaperConfig.roll58mm,
+                                  label: Text('58 mm'),
+                                ),
+                                ButtonSegment(
+                                  value: PaperConfig.roll80mm,
+                                  label: Text('80 mm'),
+                                ),
+                              ],
+                              selected: {_paperConfig},
+                              onSelectionChanged: (selection) =>
+                                  _onPaperConfigChanged(selection.first),
+                              style: const ButtonStyle(
+                                visualDensity: VisualDensity.compact,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            FilledButton.icon(
+                              onPressed:
+                                  _isScanning || _isLoading ? null : _scan,
+                              icon: const Icon(Icons.search),
+                              label: const Text('Scan'),
+                            ),
+                            FilledButton.tonalIcon(
+                              onPressed: _isConnected && !_isLoading
+                                  ? _printText
+                                  : null,
+                              icon: const Icon(Icons.print),
+                              label: const Text('Print Text'),
+                            ),
+                            FilledButton.tonalIcon(
+                              onPressed: _isConnected && !_isLoading
+                                  ? _printImage
+                                  : null,
+                              icon: const Icon(Icons.image),
+                              label: const Text('Print Image'),
+                            ),
+                            OutlinedButton.icon(
+                              onPressed: !_isLoading ? _testConnection : null,
+                              icon: const Icon(Icons.wifi_tethering),
+                              label: const Text('Test'),
+                            ),
+                            if (_isConnected)
+                              FilledButton.icon(
+                                onPressed: _isLoading ? null : _disconnect,
+                                icon: const Icon(Icons.link_off),
+                                label: const Text('Disconnect'),
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: colorScheme.error,
+                                  foregroundColor: colorScheme.onError,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
         ),
       ),
       // Loading overlay

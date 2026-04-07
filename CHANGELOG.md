@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.4.3] - 2026-04-07
+
+### Fixed
+- **Print queue deadlock**: jobs added to the queue while `commitPrint` was still running (e.g. `await printData(...)` followed immediately by `printEmptyLine(...)`) would be silently stuck and never executed. `_processQueue` now uses a `do-while` loop so any jobs that arrive during the `commitPrint` flush are processed in the next iteration instead of being ignored.
+
 ## [1.4.2] - 2026-04-07
 
 ### Fixed
