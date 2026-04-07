@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.3.8] - 2026-04-07
+
+### Fixed
+- **Android**: `printData` now consolidates all ESC/POS bytes into a single buffer and sends in 128-byte chunks with 10ms delays between chunks, preventing printer buffer overflow on receipts with many items
+- **iOS**: `writeData` now always applies 10ms delay after each BLE chunk regardless of write type (`withResponse` or `withoutResponse`), ensuring consistent flow control across all printer models
+
 ## [1.3.7] - 2026-04-07
 
 ### Fixed

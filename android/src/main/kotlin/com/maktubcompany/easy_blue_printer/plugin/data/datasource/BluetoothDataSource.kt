@@ -63,42 +63,34 @@ class BluetoothDataSource {
 
     fun printData(data: String, size: Int, align: Int, bold: Boolean): Boolean {
         return try {
-            val leftAlign = byteArrayOf(0x1B, 0x61, 0x00)
-            val centerAlign = byteArrayOf(0x1B, 0x61, 0x01)
-            val rightAlign = byteArrayOf(0x1B, 0x61, 0x02)
-
-            when (align) {
-                0 -> _socket?.outputStream?.write(leftAlign)
-                1 -> _socket?.outputStream?.write(centerAlign)
-                2 -> _socket?.outputStream?.write(rightAlign)
+            // Build complete command buffer before sending
+            val alignBytes = when (align) {
+                0 -> byteArrayOf(0x1B, 0x61, 0x00)
+                1 -> byteArrayOf(0x1B, 0x61, 0x01)
+                2 -> byteArrayOf(0x1B, 0x61, 0x02)
+                else -> byteArrayOf()
             }
-
-            val boldOn = byteArrayOf(0x1B, 0x47, 0x01)  // Ativar duplicação de impressão (simula negrito)
-            val boldOff = byteArrayOf(0x1B, 0x47, 0x00) // Desativar duplicação
-
-            if (bold) {
-                _socket?.outputStream?.write(boldOn)
-            } else {
-                _socket?.outputStream?.write(boldOff)
+            val boldBytes = if (bold) byteArrayOf(0x1B, 0x47, 0x01) else byteArrayOf(0x1B, 0x47, 0x00)
+            val sizeBytes = when (size) {
+                0 -> byteArrayOf(0x1B, 0x21, 0x03)
+                1 -> byteArrayOf(0x1B, 0x21, 0x08)
+                2 -> byteArrayOf(0x1B, 0x21, 0x10)
+                3 -> byteArrayOf(0x1B, 0x21, 0x30)
+                else -> byteArrayOf()
             }
+            val dataBytes = data.toByteArray()
+            val command = alignBytes + boldBytes + sizeBytes + dataBytes + byteArrayOf(0x0A)
 
-            val normalSize = byteArrayOf(0x1B, 0x21, 0x03)
-            val mediumSize = byteArrayOf(0x1B, 0x21, 0x08)
-            val largeSize = byteArrayOf(0x1B, 0x21, 0x10)
-            val hugeSize = byteArrayOf(0x1B, 0x21, 0x30)
-
-            when (size) {
-                0 -> _socket?.outputStream?.write(normalSize)
-                1 -> _socket?.outputStream?.write(mediumSize)
-                2 -> _socket?.outputStream?.write(largeSize)
-                3 -> _socket?.outputStream?.write(hugeSize)
+            // Send in chunks to avoid overflowing the printer buffer
+            val chunkSize = 128
+            var offset = 0
+            while (offset < command.size) {
+                val end = minOf(offset + chunkSize, command.size)
+                _socket?.outputStream?.write(command, offset, end - offset)
+                _socket?.outputStream?.flush()
+                Thread.sleep(10)
+                offset = end
             }
-
-            _socket?.outputStream?.write(data.toByteArray())
-
-            _socket?.outputStream?.write("\n".toByteArray())
-
-            _socket?.outputStream?.flush()
 
             true
         } catch (e: IOException) {

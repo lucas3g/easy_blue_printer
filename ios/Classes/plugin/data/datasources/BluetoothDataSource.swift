@@ -192,10 +192,7 @@ public class BluetoothDataSource: NSObject, CBCentralManagerDelegate, CBPeripher
             let chunk = data.subdata(in: offset..<end)
 
             peripheral.writeValue(chunk, for: characteristic, type: writeType)
-
-            if writeType == .withoutResponse {
-                Thread.sleep(forTimeInterval: 0.01)
-            }
+            Thread.sleep(forTimeInterval: 0.01)
 
             offset = end
         }
