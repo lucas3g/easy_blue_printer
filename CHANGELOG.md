@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.4.6] - 2026-04-08
+
+### Docs
+- Updated CHANGELOG to document all changes introduced in 1.4.5.
+
 ## [1.4.5] - 2026-04-08
 
 ### Fixed
