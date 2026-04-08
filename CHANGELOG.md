@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.4.5] - 2026-04-08
+
+### Fixed
+- **Android**: Reduced chunk size from 512 to 128 bytes to prevent buffer overflow on low-cost printers. Replaced the hardcoded 20 ms inter-chunk delay with an adaptive delay proportional to chunk size (`chunkSize / 10 ms`, minimum 5 ms). Added up to 2 retries with backoff on `IOException` per chunk, and validates socket connectivity before each write.
+- **iOS**: Replaced `Thread.sleep(0.02)` with real CoreBluetooth backpressure. `.withResponse` writes now block on a `DispatchSemaphore` until `peripheral(_:didWriteValueFor:)` fires (timeout 5 s). `.withoutResponse` writes check `canSendWriteWithoutResponse` and block on `peripheralIsReady(toSendWriteWithoutResponse:)` when the peripheral buffer is full. Chunk size capped at 128 bytes regardless of negotiated MTU. Up to 2 retries per chunk.
+
+### Changed
+- **example**: Added **Full Test** button that prints a large text block → image → large text block, exercising the full flow control stack end-to-end.
+
 ## [1.4.4] - 2026-04-07
 
 ### Fixed
