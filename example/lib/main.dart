@@ -120,6 +120,42 @@ class _PrinterPageState extends State<PrinterPage> {
     }
   }
 
+  Future<void> _printFullTest() async {
+    setState(() => _isLoading = true);
+    try {
+      const largeText =
+          'Este e um texto longo para testar a impressao de grandes volumes de dados. '
+          'O package deve dividir automaticamente em chunks e enviar de forma sequencial '
+          'sem travar a impressora ou corromper os caracteres impressos. '
+          'Linha 1. Linha 2. Linha 3. Linha 4. Linha 5. Fim do texto grande.';
+
+      await _controller.printData(
+        data: largeText,
+        fontSize: FS.normal,
+        textAlign: TA.left,
+        bold: false,
+      );
+      await _controller.printEmptyLine(callTimes: 2);
+      await _controller.printImage(
+        path: 'assets/images/gremio.png',
+        textAlign: TA.center,
+      );
+      await _controller.printEmptyLine(callTimes: 2);
+      await _controller.printData(
+        data: largeText,
+        fontSize: FS.normal,
+        textAlign: TA.left,
+        bold: false,
+      );
+      await _controller.printEmptyLine(callTimes: 5);
+      _showSnackBar('Full test printed successfully', isError: false);
+    } catch (e) {
+      _showSnackBar('Print error: $e', isError: true);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   Future<void> _onPaperConfigChanged(PaperConfig config) async {
     setState(() => _paperConfig = config);
     try {
@@ -311,6 +347,13 @@ class _PrinterPageState extends State<PrinterPage> {
                                   : null,
                               icon: const Icon(Icons.image),
                               label: const Text('Print Image'),
+                            ),
+                            FilledButton.tonalIcon(
+                              onPressed: _isConnected && !_isLoading
+                                  ? _printFullTest
+                                  : null,
+                              icon: const Icon(Icons.receipt),
+                              label: const Text('Full Test'),
                             ),
                             OutlinedButton.icon(
                               onPressed: !_isLoading ? _testConnection : null,

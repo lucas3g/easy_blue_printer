@@ -15,6 +15,8 @@ public class BluetoothDataSource: NSObject, CBCentralManagerDelegate, CBPeripher
     private var managerReady = false
     private var pendingScanCompletion: (([BluetoothDeviceEntity]) -> Void)?
     private var paperWidth: Int = 384
+    // Semaphore used to block writeChunk until CoreBluetooth confirms the write.
+    private var pendingWriteSemaphore: DispatchSemaphore?
 
     // Accumulates ESC/POS bytes from printData/printEmptyLine calls.
     // All buffered data is sent as one continuous stream when commitPrint,
@@ -174,19 +176,55 @@ public class BluetoothDataSource: NSObject, CBCentralManagerDelegate, CBPeripher
             : .withResponse
 
         let mtu = peripheral.maximumWriteValueLength(for: writeType)
-        let chunkSize = max(mtu, 20)
+        // Limita a 128 bytes para compatibilidade com impressoras de buffer pequeno.
+        let chunkSize = min(max(mtu, 20), 128)
         var offset = 0
 
         while offset < data.count {
             let end = min(offset + chunkSize, data.count)
             let chunk = data.subdata(in: offset..<end)
 
-            peripheral.writeValue(chunk, for: characteristic, type: writeType)
-            Thread.sleep(forTimeInterval: 0.02)
+            var attempt = 0
+            while true {
+                let ok = writeChunk(chunk, to: peripheral, characteristic: characteristic, type: writeType)
+                if ok { break }
+                attempt += 1
+                if attempt > 2 { return false }
+            }
 
             offset = end
         }
         return true
+    }
+
+    /// Envia um único chunk e bloqueia até confirmação do peripheral (sem delay fixo).
+    ///
+    /// - `.withResponse`: aguarda `didWriteValueFor` via semáforo (timeout 5s).
+    /// - `.withoutResponse`: verifica `canSendWriteWithoutResponse`; se falso, aguarda
+    ///   `peripheralIsReady(toSendWriteWithoutResponse:)` antes de escrever.
+    private func writeChunk(
+        _ chunk: Data,
+        to peripheral: CBPeripheral,
+        characteristic: CBCharacteristic,
+        type writeType: CBCharacteristicWriteType
+    ) -> Bool {
+        if writeType == .withResponse {
+            let semaphore = DispatchSemaphore(value: 0)
+            pendingWriteSemaphore = semaphore
+            peripheral.writeValue(chunk, for: characteristic, type: .withResponse)
+            let result = semaphore.wait(timeout: .now() + 5.0)
+            pendingWriteSemaphore = nil
+            return result == .success
+        } else {
+            if !peripheral.canSendWriteWithoutResponse {
+                let semaphore = DispatchSemaphore(value: 0)
+                pendingWriteSemaphore = semaphore
+                _ = semaphore.wait(timeout: .now() + 5.0)
+                pendingWriteSemaphore = nil
+            }
+            peripheral.writeValue(chunk, for: characteristic, type: .withoutResponse)
+            return true
+        }
     }
 
     private func getAlignmentData(for align: Int) -> [UInt8] {
@@ -272,6 +310,16 @@ public class BluetoothDataSource: NSObject, CBCentralManagerDelegate, CBPeripher
         for service in services {
             peripheral.discoverCharacteristics(nil, for: service)
         }
+    }
+
+    // Called when a .withResponse write completes — unblocks writeChunk.
+    public func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?) {
+        pendingWriteSemaphore?.signal()
+    }
+
+    // Called when the peripheral is ready to accept another .withoutResponse write — unblocks writeChunk.
+    public func peripheralIsReady(toSendWriteWithoutResponse peripheral: CBPeripheral) {
+        pendingWriteSemaphore?.signal()
     }
 
     public func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {

@@ -98,8 +98,8 @@ class BluetoothDataSource {
         return flushPrintBuffer()
     }
 
-    // Sends buffered bytes as one continuous stream in 512-byte chunks
-    // with 20ms between each chunk — same rate used for image data.
+    // Sends buffered bytes as one continuous stream in 128-byte chunks
+    // with an adaptive delay between each chunk — same rate used for image data.
     private fun flushPrintBuffer(): Boolean {
         val bytes = printBuffer.toByteArray()
         printBuffer.reset()
@@ -108,20 +108,31 @@ class BluetoothDataSource {
     }
 
     private fun sendChunked(bytes: ByteArray): Boolean {
-        return try {
-            val chunkSize = 512
-            var offset = 0
-            while (offset < bytes.size) {
-                val end = minOf(offset + chunkSize, bytes.size)
-                _socket?.outputStream?.write(bytes, offset, end - offset)
-                _socket?.outputStream?.flush()
-                Thread.sleep(20)
-                offset = end
+        val chunkSize = 128
+        // Delay adaptativo: proporcional ao chunk size, mínimo de 5ms.
+        // Evita delay fixo hardcoded e respeita impressoras mais lentas com chunks maiores.
+        val delayMs = (chunkSize / 10L).coerceAtLeast(5L)
+        var offset = 0
+        while (offset < bytes.size) {
+            if (_socket?.isConnected != true) throw IOException("Socket desconectado durante envio")
+            val end = minOf(offset + chunkSize, bytes.size)
+            val outputStream = _socket!!.outputStream
+            var attempt = 0
+            while (true) {
+                try {
+                    outputStream.write(bytes, offset, end - offset)
+                    outputStream.flush()
+                    break
+                } catch (e: IOException) {
+                    if (attempt >= 2) throw e
+                    attempt++
+                    Thread.sleep(delayMs * attempt)
+                }
             }
-            true
-        } catch (e: IOException) {
-            throw e
+            Thread.sleep(delayMs)
+            offset = end
         }
+        return true
     }
 
     fun disconnectToDevice(): Boolean {
