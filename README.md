@@ -28,8 +28,16 @@ A Flutter plugin for Bluetooth thermal printers. Scan, connect, and print text o
 
 | Platform | Minimum Version |
 |----------|----------------|
-| Android  | SDK 21 (5.0)   |
-| iOS      | 12.0           |
+| Android  | SDK 24 (7.0)   |
+| iOS      | 13.0           |
+| Flutter  | 3.44.0         |
+| Dart     | 3.12.0         |
+
+On iOS the plugin ships both a **Swift Package** (`ios/easy_blue_printer/Package.swift`) and a
+**CocoaPods** podspec, so it works with either integration — no extra setup required.
+
+On Android the plugin uses **Built-in Kotlin**: it no longer applies the Kotlin Gradle Plugin,
+so it does not trigger the `plugins that apply Kotlin Gradle Plugin (KGP)` build warning.
 
 ## Installation
 
@@ -489,8 +497,16 @@ This project is distributed under the MIT license. See the [LICENSE](LICENSE) fi
 
 | Plataforma | Versao Minima  |
 |------------|----------------|
-| Android    | SDK 21 (5.0)   |
-| iOS        | 12.0           |
+| Android    | SDK 24 (7.0)   |
+| iOS        | 13.0           |
+| Flutter    | 3.44.0         |
+| Dart       | 3.12.0         |
+
+No iOS o plugin fornece tanto um **Swift Package** (`ios/easy_blue_printer/Package.swift`) quanto o
+podspec do **CocoaPods**, entao funciona nas duas integracoes sem configuracao extra.
+
+No Android o plugin usa **Built-in Kotlin**: nao aplica mais o Kotlin Gradle Plugin, portanto nao
+dispara mais o aviso de build `plugins that apply Kotlin Gradle Plugin (KGP)`.
 
 ## Instalacao
 

@@ -31,13 +31,15 @@ class EasyBluePrinter {
 
   Future<T> _enqueue<T>(Future<T> Function() job) {
     final completer = Completer<T>();
-    _queue.add(_PrintJob(() async {
-      try {
-        completer.complete(await job());
-      } catch (e, st) {
-        completer.completeError(e, st);
-      }
-    }));
+    _queue.add(
+      _PrintJob(() async {
+        try {
+          completer.complete(await job());
+        } catch (e, st) {
+          completer.completeError(e, st);
+        }
+      }),
+    );
     _processQueue();
     return completer.future;
   }
@@ -72,12 +74,9 @@ class EasyBluePrinter {
   }
 
   Future<bool> printData({required String data, required FS fontSize, required TA textAlign, required bool bold}) {
-    return _enqueue(() => EasyBluePrinterPlatform.instance.printData(
-          data: data,
-          fontSize: fontSize,
-          textAlign: textAlign,
-          bold: bold,
-        ));
+    return _enqueue(
+      () => EasyBluePrinterPlatform.instance.printData(data: data, fontSize: fontSize, textAlign: textAlign, bold: bold),
+    );
   }
 
   Future<void> printEmptyLine({required int callTimes}) {

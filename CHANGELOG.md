@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.0.0] - 2026-09-10
+
+Toolchain modernization release. No public Dart API changed — the major bump reflects the raised
+platform/SDK floors, which are breaking for existing consumers.
+
+### Breaking
+- **Minimum SDK**: bumped to Flutter 3.44 / Dart 3.12.
+- **Android — Built-in Kotlin**: the plugin no longer applies the Kotlin Gradle Plugin (`kotlin-android`). Kotlin compilation is now provided by the Android Gradle Plugin, following the [official migration guide](https://docs.flutter.dev/release/breaking-changes/migrate-to-built-in-kotlin/for-plugin-authors). This removes the `Your app uses the following plugins that apply Kotlin Gradle Plugin (KGP)` warning and keeps the plugin buildable on future Flutter versions. `compileSdk` raised from 31 to 36 and Java/JVM target from 11 to 17.
+- **iOS — Swift Package Manager**: added `ios/easy_blue_printer/Package.swift`. Sources moved from `ios/Classes/` to `ios/easy_blue_printer/Sources/easy_blue_printer/` and `PrivacyInfo.xcprivacy` alongside them. The podspec was updated to the new paths, so **CocoaPods keeps working** — apps on either integration are supported.
+- **iOS minimum version**: raised from 12.0 to 13.0 (required by Flutter 3.44+).
+- **Android minimum SDK**: raised from 21 to 24, matching the floor Flutter 3.44+ enforces on apps.
+
 ## [1.4.6] - 2026-04-08
 
 ### Docs

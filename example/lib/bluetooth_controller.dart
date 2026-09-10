@@ -6,8 +6,7 @@ import 'package:flutter/services.dart';
 class BluetoothController {
   final EasyBluePrinter _easyBluePrinterPlugin = EasyBluePrinter.instance;
 
-  final StreamController<List<BluetoothDevice>> _devicesStream =
-      StreamController<List<BluetoothDevice>>.broadcast();
+  final StreamController<List<BluetoothDevice>> _devicesStream = StreamController<List<BluetoothDevice>>.broadcast();
 
   Stream<List<BluetoothDevice>> get devicesStream => _devicesStream.stream;
 
@@ -38,18 +37,8 @@ class BluetoothController {
     return await _easyBluePrinterPlugin.disconnectFromDevice();
   }
 
-  Future<bool> printData({
-    required String data,
-    required FS fontSize,
-    required TA textAlign,
-    required bool bold,
-  }) async {
-    return await _easyBluePrinterPlugin.printData(
-      data: data,
-      fontSize: fontSize,
-      textAlign: textAlign,
-      bold: bold,
-    );
+  Future<bool> printData({required String data, required FS fontSize, required TA textAlign, required bool bold}) async {
+    return await _easyBluePrinterPlugin.printData(data: data, fontSize: fontSize, textAlign: textAlign, bold: bold);
   }
 
   Future<void> printEmptyLine({required int callTimes}) async {
@@ -61,11 +50,9 @@ class BluetoothController {
   }
 
   Future<bool> printImage({required String path, required TA textAlign}) async {
-    final bytes =
-        await rootBundle.load(path).then((value) => value.buffer.asUint8List());
+    final bytes = await rootBundle.load(path).then((value) => value.buffer.asUint8List());
 
-    return await _easyBluePrinterPlugin.printImage(
-        bytes: bytes, textAlign: textAlign);
+    return await _easyBluePrinterPlugin.printImage(bytes: bytes, textAlign: textAlign);
   }
 
   Future<void> configurePrinter(PaperConfig config) async {

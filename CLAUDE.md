@@ -2,7 +2,7 @@
 
 ## Development Commands
 
-This project uses **FVM** (Flutter Version Management) with Flutter **3.38.9**.
+This project uses **FVM** (Flutter Version Management) with Flutter **3.47.2**.
 
 ```bash
 # Always prefix flutter commands with fvm
@@ -49,8 +49,8 @@ plugin/
 └── utils/            → Image processing (Android only)
 ```
 
-- **Android** (`android/src/main/kotlin/com/maktubcompany/easy_blue_printer/`): Kotlin, RFCOMM socket, min SDK 21, compile SDK 31
-- **iOS** (`ios/Classes/`): Swift 5.0, CoreBluetooth, min iOS 12.0. Image printing not implemented on iOS.
+- **Android** (`android/src/main/kotlin/com/maktubcompany/easy_blue_printer/`): Kotlin (Built-in Kotlin — no KGP applied), RFCOMM socket, min SDK 24, compile SDK 36, JVM target 17
+- **iOS** (`ios/easy_blue_printer/Sources/easy_blue_printer/`): Swift 5.0, CoreBluetooth, min iOS 13.0. Ships both a Swift Package (`ios/easy_blue_printer/Package.swift`) and a CocoaPods podspec (`ios/easy_blue_printer.podspec`) pointing at the same sources. Image printing not implemented on iOS.
 
 ## Key Conventions
 

@@ -14,10 +14,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Easy Blue Printer',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorSchemeSeed: Colors.blue,
-        useMaterial3: true,
-      ),
+      theme: ThemeData(colorSchemeSeed: Colors.blue, useMaterial3: true),
       home: const PrinterPage(),
     );
   }
@@ -95,8 +92,7 @@ class _PrinterPageState extends State<PrinterPage> {
         bold: false,
       );
       await _controller.printEmptyLine(callTimes: 5);
-      _showSnackBar(success ? 'Text printed successfully' : 'Print failed',
-          isError: !success);
+      _showSnackBar(success ? 'Text printed successfully' : 'Print failed', isError: !success);
     } catch (e) {
       _showSnackBar('Print error: $e', isError: true);
     } finally {
@@ -107,12 +103,8 @@ class _PrinterPageState extends State<PrinterPage> {
   Future<void> _printImage() async {
     setState(() => _isLoading = true);
     try {
-      final success = await _controller.printImage(
-        path: 'assets/images/gremio.png',
-        textAlign: TA.center,
-      );
-      _showSnackBar(success ? 'Image printed successfully' : 'Print failed',
-          isError: !success);
+      final success = await _controller.printImage(path: 'assets/images/gremio.png', textAlign: TA.center);
+      _showSnackBar(success ? 'Image printed successfully' : 'Print failed', isError: !success);
     } catch (e) {
       _showSnackBar('Print error: $e', isError: true);
     } finally {
@@ -129,24 +121,11 @@ class _PrinterPageState extends State<PrinterPage> {
           'sem travar a impressora ou corromper os caracteres impressos. '
           'Linha 1. Linha 2. Linha 3. Linha 4. Linha 5. Fim do texto grande.';
 
-      await _controller.printData(
-        data: largeText,
-        fontSize: FS.normal,
-        textAlign: TA.left,
-        bold: false,
-      );
+      await _controller.printData(data: largeText, fontSize: FS.normal, textAlign: TA.left, bold: false);
       await _controller.printEmptyLine(callTimes: 2);
-      await _controller.printImage(
-        path: 'assets/images/gremio.png',
-        textAlign: TA.center,
-      );
+      await _controller.printImage(path: 'assets/images/gremio.png', textAlign: TA.center);
       await _controller.printEmptyLine(callTimes: 2);
-      await _controller.printData(
-        data: largeText,
-        fontSize: FS.normal,
-        textAlign: TA.left,
-        bold: false,
-      );
+      await _controller.printData(data: largeText, fontSize: FS.normal, textAlign: TA.left, bold: false);
       await _controller.printEmptyLine(callTimes: 5);
       _showSnackBar('Full test printed successfully', isError: false);
     } catch (e) {
@@ -169,9 +148,7 @@ class _PrinterPageState extends State<PrinterPage> {
     setState(() => _isLoading = true);
     try {
       final connected = await _controller.isConnected();
-      _showSnackBar(
-          connected ? 'Printer is connected' : 'Printer is not connected',
-          isError: !connected);
+      _showSnackBar(connected ? 'Printer is connected' : 'Printer is not connected', isError: !connected);
       if (!connected && _connectedDevice != null) {
         setState(() => _connectedDevice = null);
       }
@@ -212,16 +189,10 @@ class _PrinterPageState extends State<PrinterPage> {
                 Container(
                   width: 10,
                   height: 10,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: _isConnected ? Colors.green : Colors.grey,
-                  ),
+                  decoration: BoxDecoration(shape: BoxShape.circle, color: _isConnected ? Colors.green : Colors.grey),
                 ),
                 const SizedBox(width: 8),
-                Text(
-                  _isConnected ? 'Connected' : 'Disconnected',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
+                Text(_isConnected ? 'Connected' : 'Disconnected', style: Theme.of(context).textTheme.bodySmall),
               ],
             ),
           ),
@@ -245,20 +216,13 @@ class _PrinterPageState extends State<PrinterPage> {
                         padding: const EdgeInsets.fromLTRB(16, 12, 8, 4),
                         child: Row(
                           children: [
-                            Icon(Icons.bluetooth,
-                                size: 20, color: colorScheme.primary),
+                            Icon(Icons.bluetooth, size: 20, color: colorScheme.primary),
                             const SizedBox(width: 8),
-                            Text('Paired Devices',
-                                style: Theme.of(context).textTheme.titleMedium),
+                            Text('Paired Devices', style: Theme.of(context).textTheme.titleMedium),
                             const Spacer(),
                             IconButton(
                               icon: _isScanning
-                                  ? SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                          strokeWidth: 2),
-                                    )
+                                  ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
                                   : const Icon(Icons.refresh),
                               tooltip: 'Scan devices',
                               onPressed: _isScanning ? null : _scan,
@@ -267,10 +231,7 @@ class _PrinterPageState extends State<PrinterPage> {
                         ),
                       ),
                       const Divider(height: 1),
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(maxHeight: 240),
-                        child: _buildDeviceList(),
-                      ),
+                      ConstrainedBox(constraints: const BoxConstraints(maxHeight: 240), child: _buildDeviceList()),
                     ],
                   ),
                 ),
@@ -287,39 +248,26 @@ class _PrinterPageState extends State<PrinterPage> {
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.tune,
-                                size: 20, color: colorScheme.primary),
+                            Icon(Icons.tune, size: 20, color: colorScheme.primary),
                             const SizedBox(width: 8),
-                            Text('Actions',
-                                style: Theme.of(context).textTheme.titleMedium),
+                            Text('Actions', style: Theme.of(context).textTheme.titleMedium),
                           ],
                         ),
                         const SizedBox(height: 12),
                         Row(
                           children: [
-                            Icon(Icons.receipt_long,
-                                size: 18, color: colorScheme.onSurfaceVariant),
+                            Icon(Icons.receipt_long, size: 18, color: colorScheme.onSurfaceVariant),
                             const SizedBox(width: 8),
-                            Text('Paper roll:',
-                                style: Theme.of(context).textTheme.bodyMedium),
+                            Text('Paper roll:', style: Theme.of(context).textTheme.bodyMedium),
                             const SizedBox(width: 12),
                             SegmentedButton<PaperConfig>(
                               segments: const [
-                                ButtonSegment(
-                                  value: PaperConfig.roll58mm,
-                                  label: Text('58 mm'),
-                                ),
-                                ButtonSegment(
-                                  value: PaperConfig.roll80mm,
-                                  label: Text('80 mm'),
-                                ),
+                                ButtonSegment(value: PaperConfig.roll58mm, label: Text('58 mm')),
+                                ButtonSegment(value: PaperConfig.roll80mm, label: Text('80 mm')),
                               ],
                               selected: {_paperConfig},
-                              onSelectionChanged: (selection) =>
-                                  _onPaperConfigChanged(selection.first),
-                              style: const ButtonStyle(
-                                visualDensity: VisualDensity.compact,
-                              ),
+                              onSelectionChanged: (selection) => _onPaperConfigChanged(selection.first),
+                              style: const ButtonStyle(visualDensity: VisualDensity.compact),
                             ),
                           ],
                         ),
@@ -329,29 +277,22 @@ class _PrinterPageState extends State<PrinterPage> {
                           runSpacing: 8,
                           children: [
                             FilledButton.icon(
-                              onPressed:
-                                  _isScanning || _isLoading ? null : _scan,
+                              onPressed: _isScanning || _isLoading ? null : _scan,
                               icon: const Icon(Icons.search),
                               label: const Text('Scan'),
                             ),
                             FilledButton.tonalIcon(
-                              onPressed: _isConnected && !_isLoading
-                                  ? _printText
-                                  : null,
+                              onPressed: _isConnected && !_isLoading ? _printText : null,
                               icon: const Icon(Icons.print),
                               label: const Text('Print Text'),
                             ),
                             FilledButton.tonalIcon(
-                              onPressed: _isConnected && !_isLoading
-                                  ? _printImage
-                                  : null,
+                              onPressed: _isConnected && !_isLoading ? _printImage : null,
                               icon: const Icon(Icons.image),
                               label: const Text('Print Image'),
                             ),
                             FilledButton.tonalIcon(
-                              onPressed: _isConnected && !_isLoading
-                                  ? _printFullTest
-                                  : null,
+                              onPressed: _isConnected && !_isLoading ? _printFullTest : null,
                               icon: const Icon(Icons.receipt),
                               label: const Text('Full Test'),
                             ),
@@ -394,13 +335,9 @@ class _PrinterPageState extends State<PrinterPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.bluetooth_searching,
-                  size: 48, color: Colors.grey.shade400),
+              Icon(Icons.bluetooth_searching, size: 48, color: Colors.grey.shade400),
               const SizedBox(height: 16),
-              Text(
-                'Tap Scan to find paired devices',
-                style: TextStyle(color: Colors.grey.shade600),
-              ),
+              Text('Tap Scan to find paired devices', style: TextStyle(color: Colors.grey.shade600)),
             ],
           ),
         ),
@@ -423,10 +360,7 @@ class _PrinterPageState extends State<PrinterPage> {
                 children: [
                   Icon(Icons.devices, size: 48, color: Colors.grey.shade400),
                   const SizedBox(height: 16),
-                  Text(
-                    'No paired devices found',
-                    style: TextStyle(color: Colors.grey.shade600),
-                  ),
+                  Text('No paired devices found', style: TextStyle(color: Colors.grey.shade600)),
                 ],
               ),
             ),
@@ -442,16 +376,10 @@ class _PrinterPageState extends State<PrinterPage> {
             final isThisConnected = _connectedDevice?.address == device.address;
 
             return ListTile(
-              leading: Icon(
-                Icons.bluetooth,
-                color: isThisConnected ? Colors.green : null,
-              ),
+              leading: Icon(Icons.bluetooth, color: isThisConnected ? Colors.green : null),
               title: Text(
                 device.name,
-                style: TextStyle(
-                  fontWeight:
-                      isThisConnected ? FontWeight.bold : FontWeight.normal,
-                ),
+                style: TextStyle(fontWeight: isThisConnected ? FontWeight.bold : FontWeight.normal),
               ),
               subtitle: Text(device.address),
               trailing: isThisConnected
@@ -459,8 +387,7 @@ class _PrinterPageState extends State<PrinterPage> {
                       label: const Text('Connected'),
                       backgroundColor: Colors.green.shade50,
                       side: BorderSide(color: Colors.green.shade200),
-                      labelStyle:
-                          TextStyle(color: Colors.green.shade700, fontSize: 12),
+                      labelStyle: TextStyle(color: Colors.green.shade700, fontSize: 12),
                     )
                   : IconButton(
                       icon: const Icon(Icons.arrow_forward_ios, size: 16),
@@ -469,8 +396,8 @@ class _PrinterPageState extends State<PrinterPage> {
               onTap: _isLoading
                   ? null
                   : isThisConnected
-                      ? null
-                      : () => _connect(device),
+                  ? null
+                  : () => _connect(device),
             );
           },
         );
