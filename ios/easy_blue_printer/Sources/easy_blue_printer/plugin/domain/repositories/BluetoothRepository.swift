@@ -8,6 +8,6 @@ public protocol BluetoothRepository {
     func printEmptyLine(callTimes: Int) -> Bool
     func isConnected() -> Bool
     func printImage(data: Data, align: Int) -> Bool
-    func configurePrinter(paperWidth: Int)
+    func configurePrinter(paperWidth: Int, heatingTime: Int?)
     func commitPrint() -> Bool
 }

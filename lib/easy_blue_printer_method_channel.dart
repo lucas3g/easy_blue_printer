@@ -61,7 +61,12 @@ class MethodChannelEasyBluePrinter extends EasyBluePrinterPlatform {
 
   @override
   Future<void> configurePrinter(PaperConfig config) async {
-    await methodChannel.invokeMethod('configurePrinter', {'paperWidth': config.widthPixels});
+    await methodChannel.invokeMethod('configurePrinter', {
+      'paperWidth': config.widthPixels,
+      // Ausente quando o chamador não pediu densidade: o lado nativo então
+      // não manda `ESC 7` e a impressora fica como veio de fábrica.
+      if (config.density != null) 'heatingTime': config.density!.heatingTime,
+    });
   }
 
   @override

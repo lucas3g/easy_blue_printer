@@ -2,6 +2,7 @@ package com.maktubcompany.easy_blue_printer.plugin.utils
 
 import android.graphics.Bitmap
 import android.util.Log
+import java.io.ByteArrayOutputStream
 import java.util.Locale
 
 object Utils {
@@ -20,13 +21,19 @@ object Utils {
         "1100", "1101", "1110", "1111"
     )
 
+    /// Altura de cada bloco `GS v 0`.
+    ///
+    /// Um raster inteiro num comando só significa alimentar a impressora por
+    /// dezenas de segundos sem que ela possa imprimir nada: muitos modelos
+    /// desistem no meio e voltam ao modo texto, e o resto dos bytes sai como
+    /// caracteres no papel. Em blocos, cada comando é pequeno, a impressora
+    /// imprime e pede o próximo. Sem avanço de papel entre eles, o resultado
+    /// é contínuo.
+    private const val BAND_HEIGHT = 64
+
     fun decodeBitmap(bmp: Bitmap): ByteArray? {
         val bmpWidth = bmp.width
         val bmpHeight = bmp.height
-
-        val list: MutableList<String> = ArrayList() //binaryString list
-        var sb: StringBuffer
-
 
         var bitLen = bmpWidth / 8
         val zeroCount = bmpWidth % 8
@@ -39,43 +46,52 @@ object Utils {
             }
         }
 
-        for (i in 0 until bmpHeight) {
-            sb = StringBuffer()
-            for (j in 0 until bmpWidth) {
-                val color = bmp.getPixel(j, i)
+        val out = ByteArrayOutputStream()
+        var top = 0
 
-                val r = (color shr 16) and 0xff
-                val g = (color shr 8) and 0xff
-                val b = color and 0xff
+        while (top < bmpHeight) {
+            val bandHeight = minOf(BAND_HEIGHT, bmpHeight - top)
+            val list: MutableList<String> = ArrayList() //binaryString list
 
-                // if color close to white，bit='0', else bit='1'
-                if (r > 160 && g > 160 && b > 160) sb.append("0")
-                else sb.append("1")
+            for (i in top until top + bandHeight) {
+                val sb = StringBuffer()
+                for (j in 0 until bmpWidth) {
+                    val color = bmp.getPixel(j, i)
+
+                    val a = (color ushr 24) and 0xff
+                    val r = (color shr 16) and 0xff
+                    val g = (color shr 8) and 0xff
+                    val b = color and 0xff
+
+                    // Transparente é vazio, e vazio não queima: sem isto, um
+                    // PNG com fundo transparente sai com o papel todo preto.
+                    // Fora isso: se a cor é clara, bit='0'; senão, bit='1'.
+                    if (a < 128 || (r > 160 && g > 160 && b > 160)) sb.append("0")
+                    else sb.append("1")
+                }
+                if (zeroCount > 0) {
+                    sb.append(zeroStr)
+                }
+                list.add(sb.toString())
             }
-            if (zeroCount > 0) {
-                sb.append(zeroStr)
-            }
-            list.add(sb.toString())
+
+            // GS v 0 command header: 1D 76 30 00 xL xH yL yH
+            // xL/xH = bytes per line (little-endian), yL/yH = height in lines
+            out.write(
+                byteArrayOf(
+                    0x1D, 0x76, 0x30, 0x00,
+                    (bitLen and 0xFF).toByte(),
+                    ((bitLen shr 8) and 0xFF).toByte(),
+                    (bandHeight and 0xFF).toByte(),
+                    ((bandHeight shr 8) and 0xFF).toByte()
+                )
+            )
+            out.write(hexList2Byte(binaryListToHexStringList(list)))
+
+            top += bandHeight
         }
 
-        val bmpHexList = binaryListToHexStringList(list)
-
-        // GS v 0 command header: 1D 76 30 00 xL xH yL yH
-        // xL/xH = bytes per line (little-endian), yL/yH = height in lines (little-endian)
-        val header = byteArrayOf(
-            0x1D, 0x76, 0x30, 0x00,
-            (bitLen and 0xFF).toByte(),
-            ((bitLen shr 8) and 0xFF).toByte(),
-            (bmpHeight and 0xFF).toByte(),
-            ((bmpHeight shr 8) and 0xFF).toByte()
-        )
-
-        val rasterData = hexList2Byte(bmpHexList)
-        val result = ByteArray(header.size + rasterData.size)
-        System.arraycopy(header, 0, result, 0, header.size)
-        System.arraycopy(rasterData, 0, result, header.size, rasterData.size)
-
-        return result
+        return out.toByteArray()
     }
 
     fun binaryListToHexStringList(list: List<String>): List<String> {

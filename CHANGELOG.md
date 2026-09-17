@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.1.0] - 2026-09-17
+
+### Added
+- **Print density**: `PaperConfig` now accepts an optional `density` (`PrintDensity.normal` / `dark` / `darkest`), sent to the printer as `ESC 7`. Omitting it keeps the factory heating and sends no command at all, so existing behaviour is unchanged. The setting is re-applied after each image, since the `ESC @` that ends a raster resets it.
+
+### Fixed
+- **Image banding**: raster data is now split into 64-line `GS v 0` blocks instead of one giant command. A single command kept many printers busy for tens of seconds without printing, and they gave up mid-stream and fell back to text mode — the rest of the bytes came out as garbage characters on the paper.
+- **Transparent PNGs**: fully transparent pixels are treated as blank on both platforms. On Android `decodeBitmap` now reads the alpha channel; on iOS the scaling context is no longer opaque, which was flattening the image onto a black background before the alpha was ever seen. A PNG with a transparent background printed solid black.
+- **Android flow control**: chunk pacing now follows the speed the paper actually comes out (~28.8 KB/s) with a 512-byte chunk, instead of a fixed delay per chunk. Feeding slower than the print speed only made the printer wait; feeding faster overran its buffer.
+
 ## [2.0.0] - 2026-09-10
 
 Toolchain modernization release. No public Dart API changed — the major bump reflects the raised

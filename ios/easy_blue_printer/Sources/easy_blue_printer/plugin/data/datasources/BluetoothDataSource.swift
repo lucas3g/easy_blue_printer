@@ -15,6 +15,11 @@ public class BluetoothDataSource: NSObject, CBCentralManagerDelegate, CBPeripher
     private var managerReady = false
     private var pendingScanCompletion: (([BluetoothDeviceEntity]) -> Void)?
     private var paperWidth: Int = 384
+
+    /// O aquecimento pedido pelo chamador, guardado porque o `ESC @` no fim de
+    /// cada imagem o apaga e ele precisa ser reposto. `nil` mantém o de
+    /// fábrica e não manda comando nenhum.
+    private var heatingTime: Int?
     // Semaphore used to block writeChunk until CoreBluetooth confirms the write.
     private var pendingWriteSemaphore: DispatchSemaphore?
 
@@ -144,8 +149,18 @@ public class BluetoothDataSource: NSObject, CBCentralManagerDelegate, CBPeripher
             && writableCharacteristic != nil
     }
 
-    public func configurePrinter(paperWidth: Int) {
+    public func configurePrinter(paperWidth: Int, heatingTime: Int?) {
         self.paperWidth = paperWidth
+        self.heatingTime = heatingTime
+        writeHeating()
+    }
+
+    /// `ESC 7 n1 n2 n3`: pontos simultâneos, tempo de aquecimento e intervalo.
+    /// Só o tempo muda — é ele que escurece o traço. Vai para o buffer como
+    /// qualquer outro comando, então só chega à impressora no próximo envio.
+    private func writeHeating() {
+        guard let heatingTime else { return }
+        printBuffer.append(contentsOf: [0x1B, 0x37, 0x07, UInt8(heatingTime & 0xFF), 0x02])
     }
 
     // Encodes the image to ESC/POS bytes and appends them to printBuffer.
@@ -162,6 +177,11 @@ public class BluetoothDataSource: NSObject, CBCentralManagerDelegate, CBPeripher
         printBuffer.append(contentsOf: [0x0A, 0x0A, 0x0A, 0x0A])
         // Reset printer to text mode so subsequent text commands work correctly
         printBuffer.append(contentsOf: [0x1B, 0x40])
+        // O `ESC @` inicializa a impressora, e isso zera também o aquecimento
+        // do `ESC 7`. Sem repor aqui, um documento fatiado imprime a primeira
+        // fatia na densidade pedida e todas as outras na de fábrica — o papel
+        // sai mais fraco da emenda para baixo.
+        writeHeating()
         return true
     }
 

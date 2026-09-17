@@ -7,13 +7,27 @@ public class Utils {
         let targetHeight = CGFloat(targetWidth) * aspectRatio
         let size = CGSize(width: CGFloat(targetWidth), height: targetHeight)
 
-        UIGraphicsBeginImageContextWithOptions(size, true, 1.0)
+        // Contexto **não** opaco: um opaco achata a imagem sobre um fundo
+        // indefinido (na prática preto) antes de `decodeBitmap` ver o alfa, e
+        // aí o tratamento de transparência de lá nunca entra — um PNG com
+        // fundo transparente saía queimado de ponta a ponta.
+        UIGraphicsBeginImageContextWithOptions(size, false, 1.0)
         image.draw(in: CGRect(origin: .zero, size: size))
         let scaledImage = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
 
         return scaledImage
     }
+
+    /// Altura de cada bloco `GS v 0`.
+    ///
+    /// Um raster inteiro num comando só significa alimentar a impressora por
+    /// dezenas de segundos sem que ela possa imprimir nada: muitos modelos
+    /// desistem no meio e voltam ao modo texto, e o resto dos bytes sai como
+    /// caracteres no papel. Em blocos, cada comando é pequeno, a impressora
+    /// imprime e pede o próximo. Sem avanço de papel entre eles, o resultado
+    /// é contínuo.
+    private static let bandHeight = 64
 
     public static func decodeBitmap(_ image: UIImage) -> Data? {
         guard let cgImage = image.cgImage else { return nil }
@@ -24,7 +38,9 @@ public class Utils {
         let colorSpace = CGColorSpaceCreateDeviceRGB()
         let bytesPerPixel = 4
         let bytesPerRow = bmpWidth * bytesPerPixel
-        var pixelData = [UInt8](repeating: 0, count: bmpHeight * bytesPerRow)
+        // Branco, e não zero: o buffer zerado é preto opaco, então tudo que a
+        // imagem deixasse transparente sairia queimado no papel.
+        var pixelData = [UInt8](repeating: 0xFF, count: bmpHeight * bytesPerRow)
 
         guard let context = CGContext(
             data: &pixelData,
@@ -48,44 +64,50 @@ public class Utils {
             }
         }
 
-        var list: [String] = []
+        var out = Data()
+        var top = 0
 
-        for i in 0..<bmpHeight {
-            var sb = ""
-            for j in 0..<bmpWidth {
-                let offset = i * bytesPerRow + j * bytesPerPixel
-                let r = Int(pixelData[offset])
-                let g = Int(pixelData[offset + 1])
-                let b = Int(pixelData[offset + 2])
+        while top < bmpHeight {
+            let band = min(bandHeight, bmpHeight - top)
+            var list: [String] = []
 
-                if r > 160 && g > 160 && b > 160 {
-                    sb += "0"
-                } else {
-                    sb += "1"
+            for i in top..<(top + band) {
+                var sb = ""
+                for j in 0..<bmpWidth {
+                    let offset = i * bytesPerRow + j * bytesPerPixel
+                    let r = Int(pixelData[offset])
+                    let g = Int(pixelData[offset + 1])
+                    let b = Int(pixelData[offset + 2])
+                    let a = Int(pixelData[offset + 3])
+
+                    // Transparente é vazio, e vazio não queima.
+                    if a < 128 || (r > 160 && g > 160 && b > 160) {
+                        sb += "0"
+                    } else {
+                        sb += "1"
+                    }
                 }
+                if zeroCount > 0 {
+                    sb += zeroStr
+                }
+                list.append(sb)
             }
-            if zeroCount > 0 {
-                sb += zeroStr
-            }
-            list.append(sb)
+
+            // GS v 0 command header: 1D 76 30 00 xL xH yL yH
+            // xL/xH = bytes per line (little-endian), yL/yH = height in lines
+            out.append(Data([
+                0x1D, 0x76, 0x30, 0x00,
+                UInt8(bitLen & 0xFF),
+                UInt8((bitLen >> 8) & 0xFF),
+                UInt8(band & 0xFF),
+                UInt8((band >> 8) & 0xFF)
+            ]))
+            out.append(hexListToData(binaryListToHexStringList(list)))
+
+            top += band
         }
 
-        let bmpHexList = binaryListToHexStringList(list)
-
-        // GS v 0 command header: 1D 76 30 00 xL xH yL yH
-        // xL/xH = bytes per line (little-endian), yL/yH = height in lines (little-endian)
-        var header = Data([
-            0x1D, 0x76, 0x30, 0x00,
-            UInt8(bitLen & 0xFF),
-            UInt8((bitLen >> 8) & 0xFF),
-            UInt8(bmpHeight & 0xFF),
-            UInt8((bmpHeight >> 8) & 0xFF)
-        ])
-
-        let rasterData = hexListToData(bmpHexList)
-        header.append(rasterData)
-
-        return header
+        return out
     }
 
     // MARK: - Private helpers

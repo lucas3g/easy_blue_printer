@@ -18,13 +18,45 @@ class BluetoothDataSource {
     private var _socket: BluetoothSocket? = null
     var paperWidth: Int = 384
 
+    /// O aquecimento pedido pelo chamador, guardado porque o `ESC @` no fim de
+    /// cada imagem o apaga e ele precisa ser reposto. `null` mantém o de
+    /// fábrica e não manda comando nenhum.
+    private var heatingTime: Int? = null
+
     // Accumulates ESC/POS bytes from printData/printEmptyLine calls.
     // All buffered data is sent as one continuous stream when commitPrint,
     // printEmptyLine, or printImage is called.
     private val printBuffer = ByteArrayOutputStream()
 
-    fun configurePrinter(paperWidth: Int) {
+    private companion object {
+        const val CHUNK_SIZE = 512
+
+        /// Quantos bytes de raster a impressora consome por segundo.
+        ///
+        /// Uma térmica de 80mm a 203 dpi imprime cerca de 50 mm/s, ou seja
+        /// ~400 linhas/s; a 72 bytes por linha dá ~28 KB/s. O valor é
+        /// deliberadamente conservador: o custo de errar para menos é uma
+        /// impressão mais lenta, e para mais é o buffer estourar e o papel
+        /// sair com lixo.
+        const val BYTES_PER_SECOND = 28_800L
+    }
+
+    fun configurePrinter(paperWidth: Int, heatingTime: Int?) {
         this.paperWidth = paperWidth
+        this.heatingTime = heatingTime
+        writeHeating()
+    }
+
+    /// `ESC 7 n1 n2 n3`: pontos simultâneos, tempo de aquecimento e intervalo.
+    /// Só o tempo muda — é ele que escurece o traço. Vai para o buffer como
+    /// qualquer outro comando, então só chega à impressora no próximo envio;
+    /// mandar agora exigiria um socket que pode nem existir ainda quando a
+    /// bobina é configurada.
+    private fun writeHeating() {
+        val heatingTime = this.heatingTime ?: return
+        printBuffer.write(
+            byteArrayOf(0x1B, 0x37, 0x07, (heatingTime and 0xFF).toByte(), 0x02)
+        )
     }
 
     fun getPairedDevices(): List<BluetoothDeviceEntity> {
@@ -98,8 +130,8 @@ class BluetoothDataSource {
         return flushPrintBuffer()
     }
 
-    // Sends buffered bytes as one continuous stream in 128-byte chunks
-    // with an adaptive delay between each chunk — same rate used for image data.
+    // Sends buffered bytes as one continuous stream, paced to the speed the
+    // paper actually comes out — same rate used for image data.
     private fun flushPrintBuffer(): Boolean {
         val bytes = printBuffer.toByteArray()
         printBuffer.reset()
@@ -108,10 +140,12 @@ class BluetoothDataSource {
     }
 
     private fun sendChunked(bytes: ByteArray): Boolean {
-        val chunkSize = 128
-        // Delay adaptativo: proporcional ao chunk size, mínimo de 5ms.
-        // Evita delay fixo hardcoded e respeita impressoras mais lentas com chunks maiores.
-        val delayMs = (chunkSize / 10L).coerceAtLeast(5L)
+        val chunkSize = CHUNK_SIZE
+        // O ritmo acompanha a velocidade do papel, e não um número fixo por
+        // chunk: alimentar mais devagar que a impressão só faz a impressora
+        // esperar, e mais rápido enche o buffer dela — que é o que fazia o
+        // raster ser abandonado no meio.
+        val delayMs = (chunkSize * 1000L / BYTES_PER_SECOND).coerceAtLeast(1L)
         var offset = 0
         while (offset < bytes.size) {
             if (_socket?.isConnected != true) throw IOException("Socket desconectado durante envio")
@@ -183,6 +217,11 @@ class BluetoothDataSource {
             printBuffer.write(byteArrayOf(0x0A, 0x0A, 0x0A, 0x0A))
             // Reset printer to text mode so subsequent text commands work correctly
             printBuffer.write(byteArrayOf(0x1B, 0x40))
+            // O `ESC @` inicializa a impressora, e isso zera também o
+            // aquecimento do `ESC 7`. Sem repor aqui, um documento fatiado
+            // imprime a primeira fatia na densidade pedida e todas as outras
+            // na de fábrica — o papel sai mais fraco da emenda para baixo.
+            writeHeating()
             return true
         } else {
             Log.e("Print Photo error", "The file doesn't exist")

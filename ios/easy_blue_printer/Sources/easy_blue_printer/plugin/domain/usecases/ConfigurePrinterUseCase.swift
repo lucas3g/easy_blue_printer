@@ -7,7 +7,7 @@ public class ConfigurePrinterUseCase {
         self.repository = repository
     }
 
-    public func execute(paperWidth: Int) {
-        repository.configurePrinter(paperWidth: paperWidth)
+    public func execute(paperWidth: Int, heatingTime: Int?) {
+        repository.configurePrinter(paperWidth: paperWidth, heatingTime: heatingTime)
     }
 }

@@ -323,6 +323,29 @@ printer.commandDelay = Duration.zero;
 | `PaperConfig.roll80mm`           | 576 px   | 80mm roll                          |
 | `PaperConfig(widthPixels: n)`    | custom   | Any custom width in pixels         |
 
+### `PrintDensity` — Print Darkness
+
+Optional. Controls how much the thermal head heats each dot (`ESC 7`). More heat darkens the
+stroke and makes small text and barcodes easier to read, at the cost of printing slightly slower
+and wearing the head faster.
+
+| Value                    | Heating time | Description                                         |
+|--------------------------|--------------|-----------------------------------------------------|
+| _omitted_ (default)      | —            | Sends no command; keeps the printer's factory value |
+| `PrintDensity.normal`    | 80           | Factory default of most thermal printers            |
+| `PrintDensity.dark`      | 120          | One step darker — usually fixes faded small text    |
+| `PrintDensity.darkest`   | 160          | Practical limit before the stroke starts to blur    |
+
+```dart
+// Darker print on an 80mm roll
+await printer.configurePrinter(
+  PaperConfig.roll80mm.copyWith(density: PrintDensity.dark),
+);
+```
+
+> Not every printer implements `ESC 7`. Most that don't simply ignore it, but a few print the
+> parameters as text — that is why nothing is sent unless you ask for a density.
+
 ## Complete Example
 
 ```dart
@@ -791,6 +814,30 @@ printer.commandDelay = Duration.zero;
 | `PaperConfig.roll58mm`           | 384 px   | Bobina de 58mm (mais comum, padrao)     |
 | `PaperConfig.roll80mm`           | 576 px   | Bobina de 80mm                          |
 | `PaperConfig(widthPixels: n)`    | custom   | Qualquer largura customizada em pixels  |
+
+### `PrintDensity` — Densidade de Impressao
+
+Opcional. Controla quanto a cabeca termica aquece a cada ponto (`ESC 7`). Mais calor escurece o
+traco e melhora a leitura de texto pequeno e de codigos de barras, ao custo de imprimir um pouco
+mais devagar e de gastar mais a cabeca.
+
+| Valor                    | Aquecimento | Descricao                                                |
+|--------------------------|-------------|----------------------------------------------------------|
+| _omitido_ (padrao)       | —           | Nao envia comando; mantem o valor de fabrica da impressora |
+| `PrintDensity.normal`    | 80          | Padrao de fabrica da maioria das termicas                 |
+| `PrintDensity.dark`      | 120         | Um passo mais escuro — resolve texto miudo apagado        |
+| `PrintDensity.darkest`   | 160         | Limite pratico antes de o traco comecar a borrar          |
+
+```dart
+// Impressao mais escura numa bobina de 80mm
+await printer.configurePrinter(
+  PaperConfig.roll80mm.copyWith(density: PrintDensity.dark),
+);
+```
+
+> Nem toda impressora implementa o `ESC 7`. A maioria das que nao implementam simplesmente o
+> ignora, mas ha modelos que imprimem os parametros como texto — por isso nada e enviado a menos
+> que voce peca uma densidade.
 
 ## Exemplo Completo
 

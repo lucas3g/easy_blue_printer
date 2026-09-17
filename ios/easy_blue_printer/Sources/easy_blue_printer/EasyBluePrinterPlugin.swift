@@ -89,7 +89,7 @@ public class EasyBluePrinterPlugin: NSObject, FlutterPlugin {
 
         case "configurePrinter":
             if let args = call.arguments as? [String: Any], let paperWidth = args["paperWidth"] as? Int {
-                AppModule.configurePrinterUseCase.execute(paperWidth: paperWidth)
+                AppModule.configurePrinterUseCase.execute(paperWidth: paperWidth, heatingTime: args["heatingTime"] as? Int)
                 result(nil)
             } else {
                 result(FlutterError(code: "400", message: "paperWidth is required", details: nil))

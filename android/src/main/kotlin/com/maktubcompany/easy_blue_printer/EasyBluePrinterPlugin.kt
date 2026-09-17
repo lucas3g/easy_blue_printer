@@ -185,7 +185,7 @@ class EasyBluePrinterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
           result.error("400", "paperWidth is required", null)
           return
         }
-        AppModule.configurePrinterUseCase.execute(paperWidth)
+        AppModule.configurePrinterUseCase.execute(paperWidth, call.argument<Int>("heatingTime"))
         result.success(null)
       }
 
