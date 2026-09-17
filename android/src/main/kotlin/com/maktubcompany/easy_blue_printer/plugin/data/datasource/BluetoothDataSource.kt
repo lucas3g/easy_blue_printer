@@ -31,14 +31,14 @@ class BluetoothDataSource {
     private companion object {
         const val CHUNK_SIZE = 512
 
-        /// Quantos bytes de raster a impressora consome por segundo.
+        /// Quantas linhas de raster a impressora queima por segundo.
         ///
-        /// Uma térmica de 80mm a 203 dpi imprime cerca de 50 mm/s, ou seja
-        /// ~400 linhas/s; a 72 bytes por linha dá ~28 KB/s. O valor é
-        /// deliberadamente conservador: o custo de errar para menos é uma
-        /// impressão mais lenta, e para mais é o buffer estourar e o papel
-        /// sair com lixo.
-        const val BYTES_PER_SECOND = 28_800L
+        /// Uma térmica de 203 dpi imprime cerca de 50 mm/s, ou seja ~400
+        /// linhas/s, e isso não muda com a bobina: o que muda é quantos bytes
+        /// tem cada linha. O valor é deliberadamente conservador: o custo de
+        /// errar para menos é uma impressão mais lenta, e para mais é o buffer
+        /// estourar e o papel sair com lixo.
+        const val LINES_PER_SECOND = 400L
     }
 
     fun configurePrinter(paperWidth: Int, heatingTime: Int?) {
@@ -139,13 +139,21 @@ class BluetoothDataSource {
         return sendChunked(bytes)
     }
 
+    /// Quantos bytes de raster a impressora consome por segundo.
+    ///
+    /// Sai da bobina configurada, e não de um número fixo: são 8 pontos por
+    /// byte, então a linha tem 72 bytes na de 80mm (576 pontos) e 48 na de
+    /// 58mm (384). Um número fixo de 80mm alimentava a bobina estreita 1,5x
+    /// mais rápido do que o papel saía — o envio terminava antes da impressão.
+    private fun bytesPerSecond(): Long = (paperWidth / 8).toLong().coerceAtLeast(1L) * LINES_PER_SECOND
+
     private fun sendChunked(bytes: ByteArray): Boolean {
         val chunkSize = CHUNK_SIZE
         // O ritmo acompanha a velocidade do papel, e não um número fixo por
         // chunk: alimentar mais devagar que a impressão só faz a impressora
         // esperar, e mais rápido enche o buffer dela — que é o que fazia o
         // raster ser abandonado no meio.
-        val delayMs = (chunkSize * 1000L / BYTES_PER_SECOND).coerceAtLeast(1L)
+        val delayMs = (chunkSize * 1000L / bytesPerSecond()).coerceAtLeast(1L)
         var offset = 0
         while (offset < bytes.size) {
             if (_socket?.isConnected != true) throw IOException("Socket desconectado durante envio")

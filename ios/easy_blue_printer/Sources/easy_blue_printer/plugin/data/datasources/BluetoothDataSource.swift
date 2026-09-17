@@ -187,6 +187,17 @@ public class BluetoothDataSource: NSObject, CBCentralManagerDelegate, CBPeripher
 
     // MARK: - Private helpers
 
+    /// Quantas linhas de raster a impressora queima por segundo — ~50 mm/s a
+    /// 203 dpi. Não muda com a bobina; o que muda é o tamanho da linha.
+    private static let linesPerSecond: Double = 400
+
+    /// Quantos bytes de raster a impressora consome por segundo, pela bobina
+    /// configurada: 8 pontos por byte, 72 bytes por linha na de 80mm e 48 na
+    /// de 58mm.
+    private func bytesPerSecond() -> Double {
+        return Double(max(paperWidth / 8, 1)) * Self.linesPerSecond
+    }
+
     private func writeImageData(_ data: Data) -> Bool {
         guard let peripheral = connectedPeripheral,
               let characteristic = writableCharacteristic else { return false }
@@ -198,11 +209,13 @@ public class BluetoothDataSource: NSObject, CBCentralManagerDelegate, CBPeripher
         let mtu = peripheral.maximumWriteValueLength(for: writeType)
         // Limita a 128 bytes para compatibilidade com impressoras de buffer pequeno.
         let chunkSize = min(max(mtu, 20), 128)
+        let bytesPerSecond = self.bytesPerSecond()
         var offset = 0
 
         while offset < data.count {
             let end = min(offset + chunkSize, data.count)
             let chunk = data.subdata(in: offset..<end)
+            let started = Date()
 
             var attempt = 0
             while true {
@@ -210,6 +223,17 @@ public class BluetoothDataSource: NSObject, CBCentralManagerDelegate, CBPeripher
                 if ok { break }
                 attempt += 1
                 if attempt > 2 { return false }
+            }
+
+            // Piso de tempo, e não espera fixa: com `.withoutResponse` o
+            // CoreBluetooth aceita os chunks muito mais rápido do que o papel
+            // sai, e quem chamou receberia o fim do envio com metade do
+            // documento ainda por imprimir. Onde o handshake já é mais lento
+            // que o papel — o caso de `.withResponse` — isto não espera nada.
+            let devido = Double(chunk.count) / bytesPerSecond
+            let decorrido = Date().timeIntervalSince(started)
+            if decorrido < devido {
+                Thread.sleep(forTimeInterval: devido - decorrido)
             }
 
             offset = end

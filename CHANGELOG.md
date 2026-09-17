@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.0] - 2026-09-17
+
+### Fixed
+- **Print futures resolved before anything was sent**: `printData`, `printEmptyLine` and `printImage` only append bytes to a native buffer — the socket is written by `commitPrint`, which ran *after* their futures had already completed and which nobody awaited. `await printImage(...)` therefore returned with the whole raster still in memory, so callers announced the document as printed while the paper was still coming out, and an `IOException` raised mid-transfer landed on a future with no listener. Each job's future is now completed only once the commit carrying its bytes has finished, and a failed commit reports the error to every call it was carrying.
+- **Chunk pacing on narrow paper**: the send rate was a fixed 28.8 KB/s, derived from a 80mm roll (72 bytes per line at ~400 lines/s). On a 58mm roll a line is 48 bytes, so the data was fed 1.5x faster than it printed. The rate is now derived from the configured paper width on both platforms, which keeps 80mm at the same 28.8 KB/s and drops 58mm to 19.2 KB/s.
+- **iOS had no pacing at all**: with `.withoutResponse` writes, CoreBluetooth accepted chunks far faster than the printer could burn them. The same paper-speed floor now applies per chunk; where the write handshake is already slower than the paper, it adds no wait.
+
 ## [2.1.0] - 2026-09-17
 
 ### Added
