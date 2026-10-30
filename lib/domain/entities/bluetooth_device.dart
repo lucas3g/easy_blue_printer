@@ -16,8 +16,12 @@ class BluetoothDevice {
 
   static List<BluetoothDevice> parseDevices(List<String> deviceStrings) {
     return deviceStrings.map((device) {
-      final name = device.substring(0, device.indexOf('('));
-      final address = device.substring(device.indexOf('(') + 1, device.length - 1);
+      // O endereço é sempre o último par de parênteses. Cortar no primeiro
+      // fazia "Printer (BLE) (XX)" virar o endereço "BLE) (XX", e a conexão
+      // falhava com a impressora na lista.
+      final open = device.lastIndexOf('(');
+      final name = device.substring(0, open).trim();
+      final address = device.substring(open + 1, device.length - 1);
 
       return BluetoothDevice(name: name, address: address);
     }).toList();

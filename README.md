@@ -85,6 +85,18 @@ Add these keys to `ios/Runner/Info.plist`:
 <string>This app needs Bluetooth to connect to printers</string>
 ```
 
+#### Which printers an iPhone can see
+
+iOS only lets apps talk to **Bluetooth Low Energy (BLE)** devices. A printer that only speaks
+Bluetooth Classic (SPP) never shows up on an iPhone — in this or any other app — no matter the
+brand. Look for "BLE", "Bluetooth 4.0" or "dual mode" on the spec sheet. (Classic printers
+certified under Apple's MFi program use the ExternalAccessory framework, which requires the
+manufacturer to register your app with Apple and is not supported by this plugin.)
+
+The scan lists BLE printers that are advertising and also those already connected to the
+iPhone — paired in Settings or held by another app — which stop advertising while connected.
+A printer connected to **another phone** stops advertising too, and only appears once released.
+
 ## Quick Start
 
 ```dart
@@ -133,6 +145,10 @@ Future<List<BluetoothDevice>> getPairedDevices()
 ```
 
 **Returns:** List of `BluetoothDevice` objects with `name` and `address` properties.
+
+On Android it returns the bonded devices. On iOS it scans for 5 seconds and returns printers
+first, nearest first; the `address` is the identifier iOS assigns to the device on that iPhone.
+Throws a `PlatformException` with code `PERMISSION_DENIED` when Bluetooth permission was denied.
 
 ---
 
@@ -577,6 +593,18 @@ Adicione estas chaves no `ios/Runner/Info.plist`:
 <string>Este app precisa do Bluetooth para conectar a impressoras</string>
 ```
 
+#### Quais impressoras o iPhone enxerga
+
+O iOS só deixa apps falarem com aparelhos **Bluetooth Low Energy (BLE)**. Uma impressora que só
+tem Bluetooth Clássico (SPP) nunca aparece no iPhone — nem neste plugin nem em app nenhum —,
+seja qual for a marca. Procure "BLE", "Bluetooth 4.0" ou "dual mode" na ficha técnica. (As
+clássicas certificadas no programa MFi da Apple usam o framework ExternalAccessory, que exige
+que o fabricante cadastre o seu app na Apple, e não são suportadas por este plugin.)
+
+A busca lista as impressoras BLE que estão anunciando e também as que já estão conectadas ao
+iPhone — pareadas nos Ajustes ou presas a outro app —, que param de anunciar enquanto conectadas.
+Uma impressora conectada a **outro celular** também para de anunciar, e só aparece depois de solta.
+
 ## Inicio Rapido
 
 ```dart
@@ -625,6 +653,11 @@ Future<List<BluetoothDevice>> getPairedDevices()
 ```
 
 **Retorno:** Lista de objetos `BluetoothDevice` com as propriedades `name` e `address`.
+
+No Android devolve os aparelhos pareados. No iOS busca por 5 segundos e devolve as impressoras
+primeiro, das mais próximas para as mais distantes; o `address` é o identificador que o iOS dá
+ao aparelho naquele iPhone. Lança `PlatformException` com código `PERMISSION_DENIED` quando a
+permissão de Bluetooth foi negada.
 
 ---
 

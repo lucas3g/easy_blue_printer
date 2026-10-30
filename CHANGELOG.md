@@ -1,5 +1,20 @@
 # Changelog
 
+## [2.3.0] - 2026-10-30
+
+### Fixed (iOS)
+- **Printers missing from the scan**: a device was dropped when its name came only in the advertisement (the name is now read from `CBAdvertisementDataLocalNameKey` before `peripheral.name`), or when its first packet arrived without the name, which only comes in the scan response — duplicates are now kept during the scan so the name is picked up when it arrives. Devices with no name that advertise a known printer service are listed as `Printer XXXX`.
+- **Printers already connected to the iPhone never showed up**: a BLE printer connected at system level — paired in iOS Settings, as one would do on Android, or held by the manufacturer's app — stops advertising. These are now found with `retrieveConnectedPeripherals(withServices:)` against the services of the common printer modules (18F0, E7810A71, ISSC, FF00, FFE0, FFF0, AE30, Nordic UART, Zebra) plus Device Information.
+- **Scan hung forever**: with Bluetooth off or permission denied at launch, the scan waited for a `.poweredOn` that never came. It now returns an empty list when Bluetooth is off or unsupported, and fails with `PERMISSION_DENIED` (the Android code) when permission is denied. A scan requested while another is running now joins it instead of leaving the first caller waiting forever.
+- **Reconnecting without scanning**: `connectToDevice` only knew peripherals found by a scan in the same session, so reconnecting to a saved printer at app launch always failed. It now retrieves the peripheral by identifier, waits for Bluetooth to be ready, and returns `true` right away when already connected to it.
+- **Connected but nothing printed**: the write characteristic was the first writable one of whichever service answered first — often a configuration or firmware-update characteristic. It is now chosen after every service is known, preferring known printer characteristics and never using GAP, battery, alert or DFU/OTA services.
+- **Stale connections**: a timed-out connection is now cancelled; before, an out-of-range printer would connect minutes later with the app believing it was disconnected. Concurrent connection attempts are serialized.
+- **Prints reported as sent after a disconnect**: writes without response always reported success; sending now stops with a failure when the printer drops mid-job.
+- `configurePrinter` now runs on the print queue, since it writes to the same buffer that `commitPrint` drains.
+
+### Fixed
+- `BluetoothDevice.parseDevices` split on the first `(`, so a name with parentheses turned into a broken address; the name also kept a trailing space. It now splits on the last `(` and trims the name.
+
 ## [2.2.0] - 2026-09-17
 
 ### Fixed

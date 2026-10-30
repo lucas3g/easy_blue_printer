@@ -14,10 +14,15 @@ public class EasyBluePrinterPlugin: NSObject, FlutterPlugin {
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         switch call.method {
         case "getPairedDevices":
-            AppModule.scanDevicesUseCase.execute { devices in
+            AppModule.scanDevicesUseCase.execute { outcome in
                 DispatchQueue.main.async {
-                    let deviceList = devices.map { "\($0.name) (\($0.address))" }
-                    result(deviceList)
+                    switch outcome {
+                    case .success(let devices):
+                        result(devices.map { "\($0.name) (\($0.address))" })
+                    case .failure:
+                        // Mesmo código do Android, para o app tratar os dois iguais.
+                        result(FlutterError(code: "PERMISSION_DENIED", message: "Bluetooth permission was denied", details: nil))
+                    }
                 }
             }
 
@@ -89,8 +94,15 @@ public class EasyBluePrinterPlugin: NSObject, FlutterPlugin {
 
         case "configurePrinter":
             if let args = call.arguments as? [String: Any], let paperWidth = args["paperWidth"] as? Int {
-                AppModule.configurePrinterUseCase.execute(paperWidth: paperWidth, heatingTime: args["heatingTime"] as? Int)
-                result(nil)
+                // Na fila de impressão porque escreve no mesmo buffer que o
+                // `commitPrint` esvazia — da thread principal, as duas coisas
+                // podiam mexer nele ao mesmo tempo.
+                printQueue.async {
+                    AppModule.configurePrinterUseCase.execute(paperWidth: paperWidth, heatingTime: args["heatingTime"] as? Int)
+                    DispatchQueue.main.async {
+                        result(nil)
+                    }
+                }
             } else {
                 result(FlutterError(code: "400", message: "paperWidth is required", details: nil))
             }
