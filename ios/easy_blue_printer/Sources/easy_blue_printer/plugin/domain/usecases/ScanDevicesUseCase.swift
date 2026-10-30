@@ -7,9 +7,7 @@ public class ScanDevicesUseCase {
         self.repository = repository
     }
 
-    public func execute(completion: @escaping ([BluetoothDeviceEntity]) -> Void) {
-        repository.scanDevices { devices in
-            completion(devices)
-        }
+    public func execute(completion: @escaping (Result<[BluetoothDeviceEntity], BluetoothScanError>) -> Void) {
+        repository.scanDevices(completion: completion)
     }
 }

@@ -2,26 +2,81 @@ import Foundation
 import CoreBluetooth
 import UIKit
 
+/// O motivo de uma busca não poder nem começar. Só a falta de permissão vira
+/// erro: com o Bluetooth desligado a busca devolve lista vazia, como no
+/// Android, e o próprio iOS já pede ao usuário para ligar.
+public enum BluetoothScanError: Error {
+    case unauthorized
+}
+
 public class BluetoothDataSource: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate {
-    private var bluetoothManager: CBCentralManager?
+
+    /// Um aparelho visto na busca. Guarda o periférico porque o CoreBluetooth
+    /// só conecta em quem a app ainda segura uma referência.
+    private struct Candidate {
+        let peripheral: CBPeripheral
+        var name: String
+        var nameQuality: Int
+        var rssi: Int
+        var looksLikePrinter: Bool
+        let order: Int
+    }
+
+    /// De onde veio o nome: o anunciado é o mais fresco; o do GAP é o que o
+    /// iOS guardou de uma conexão anterior; o genérico é para quem anuncia
+    /// serviço de impressora sem nome nenhum.
+    private enum NameQuality {
+        static let fallback = 0
+        static let gap = 1
+        static let advertised = 2
+    }
+
+    private static let scanDuration: TimeInterval = 5
+    private static let connectTimeout: TimeInterval = 10
+    private static let stateTimeout: TimeInterval = 10
+
+    // Tudo daqui até o fim do bloco só é lido e escrito na `bluetoothQueue`,
+    // que é também a fila dos delegates do CoreBluetooth.
+    private let bluetoothQueue = DispatchQueue(label: "com.easy_blue_printer.bluetooth")
+    private var bluetoothManager: CBCentralManager!
+    private var stateWaiters: [(CBManagerState) -> Void] = []
+    private var scanWaiters: [(Result<[BluetoothDeviceEntity], BluetoothScanError>) -> Void] = []
+    private var isScanning = false
+    private var candidates: [UUID: Candidate] = [:]
     private var connectedPeripheral: CBPeripheral?
+    private var connectingPeripheral: CBPeripheral?
     private var writableCharacteristic: CBCharacteristic?
-    private var discoveredDevices: [BluetoothDeviceEntity] = []
-    private var discoveredPeripherals: [String: CBPeripheral] = [:]
-    private var scanCompletion: (([BluetoothDeviceEntity]) -> Void)?
     private var connectionSemaphore: DispatchSemaphore?
     private var pendingServiceCount: Int = 0
-    private let bluetoothQueue = DispatchQueue(label: "com.easy_blue_printer.bluetooth")
-    private var managerReady = false
-    private var pendingScanCompletion: (([BluetoothDeviceEntity]) -> Void)?
+
+    /// Uma conexão por vez: a reconexão automática da abertura e o toque do
+    /// usuário podem chegar juntos, e dois `connect` dividindo o mesmo
+    /// semáforo deixavam um deles esperando o timeout inteiro.
+    private let connectLock = DispatchSemaphore(value: 1)
+
     private var paperWidth: Int = 384
 
     /// O aquecimento pedido pelo chamador, guardado porque o `ESC @` no fim de
     /// cada imagem o apaga e ele precisa ser reposto. `nil` mantém o de
     /// fábrica e não manda comando nenhum.
     private var heatingTime: Int?
+
     // Semaphore used to block writeChunk until CoreBluetooth confirms the write.
-    private var pendingWriteSemaphore: DispatchSemaphore?
+    // Set on the print queue and signalled from the Bluetooth queue, hence the lock.
+    private let writeLock = NSLock()
+    private var _pendingWriteSemaphore: DispatchSemaphore?
+    private var pendingWriteSemaphore: DispatchSemaphore? {
+        get {
+            writeLock.lock()
+            defer { writeLock.unlock() }
+            return _pendingWriteSemaphore
+        }
+        set {
+            writeLock.lock()
+            _pendingWriteSemaphore = newValue
+            writeLock.unlock()
+        }
+    }
 
     // Accumulates ESC/POS bytes from printData/printEmptyLine calls.
     // All buffered data is sent as one continuous stream when commitPrint,
@@ -35,76 +90,125 @@ public class BluetoothDataSource: NSObject, CBCentralManagerDelegate, CBPeripher
 
     // MARK: - Public methods
 
-    public func scanDevices(completion: @escaping ([BluetoothDeviceEntity]) -> Void) {
+    /// Busca por alguns segundos e devolve tudo que dá para conectar, com as
+    /// impressoras no topo e as mais próximas primeiro.
+    ///
+    /// Antes desta versão uma impressora ficava de fora quando: o nome só vinha
+    /// no anúncio (e não em `peripheral.name`); ela já estava conectada ao
+    /// iPhone — pareada nos Ajustes ou aberta por outra app — e por isso tinha
+    /// parado de anunciar; ou o Bluetooth ainda não estava pronto e a busca
+    /// nunca respondia.
+    public func scanDevices(completion: @escaping (Result<[BluetoothDeviceEntity], BluetoothScanError>) -> Void) {
         bluetoothQueue.async { [weak self] in
-            guard let self = self,
-                  let bluetoothManager = self.bluetoothManager else {
-                completion([])
+            guard let self = self else {
+                completion(.success([]))
                 return
             }
 
-            if !self.managerReady {
-                self.pendingScanCompletion = completion
-                return
-            }
-
-            guard bluetoothManager.state == .poweredOn else {
-                completion([])
-                return
-            }
-
-            self.startScan(bluetoothManager: bluetoothManager, completion: completion)
-        }
-    }
-
-    private func startScan(bluetoothManager: CBCentralManager, completion: @escaping ([BluetoothDeviceEntity]) -> Void) {
-        self.discoveredDevices.removeAll()
-        self.discoveredPeripherals.removeAll()
-        self.scanCompletion = completion
-        bluetoothManager.scanForPeripherals(withServices: nil, options: nil)
-
-        self.bluetoothQueue.asyncAfter(deadline: .now() + 5.0) { [weak self] in
-            guard let self = self else { return }
-            self.bluetoothManager?.stopScan()
-
-            if let connected = self.connectedPeripheral,
-               let name = connected.name,
-               !name.isEmpty {
-                let address = connected.identifier.uuidString
-                if self.discoveredPeripherals[address] == nil {
-                    self.discoveredPeripherals[address] = connected
-                    self.discoveredDevices.insert(BluetoothDeviceEntity(name: name, address: address), at: 0)
+            self.whenStateKnown { state in
+                switch state {
+                case .poweredOn:
+                    // Quem chega com uma busca em andamento pega carona nela:
+                    // recomeçar zerava a lista e deixava a primeira chamada
+                    // esperando para sempre.
+                    self.scanWaiters.append(completion)
+                    self.startScanIfIdle()
+                case .unauthorized:
+                    completion(.failure(.unauthorized))
+                default:
+                    completion(.success([]))
                 }
             }
-
-            self.scanCompletion?(self.discoveredDevices)
-            self.scanCompletion = nil
         }
     }
 
+    /// Conecta pelo identificador que a busca devolveu, mesmo sem uma busca
+    /// nesta sessão: o iOS devolve o periférico de quem ele já conhece, e é
+    /// isso que deixa a reconexão automática da abertura do app funcionar.
     public func connectToDevice(address: String) -> Bool {
-        guard let bluetoothManager = bluetoothManager else { return false }
+        guard let identifier = UUID(uuidString: address) else { return false }
 
-        guard let peripheral = discoveredPeripherals[address] else { return false }
+        connectLock.wait()
+        defer { connectLock.signal() }
 
-        bluetoothManager.stopScan()
-        writableCharacteristic = nil
-        connectionSemaphore = DispatchSemaphore(value: 0)
+        guard waitForState() == .poweredOn else { return false }
 
-        bluetoothManager.connect(peripheral, options: nil)
+        enum Start {
+            case unknownDevice
+            case alreadyConnected
+            case connecting(CBPeripheral, DispatchSemaphore)
+        }
 
-        let result = connectionSemaphore?.wait(timeout: .now() + 10)
-        connectionSemaphore = nil
+        let start: Start = bluetoothQueue.sync {
+            if let current = self.connectedPeripheral,
+               current.identifier == identifier,
+               current.state == .connected,
+               self.writableCharacteristic != nil {
+                return .alreadyConnected
+            }
 
-        return result == .success && writableCharacteristic != nil
+            guard let peripheral = self.knownPeripheral(identifier) else { return .unknownDevice }
+
+            self.bluetoothManager.stopScan()
+            if let current = self.connectedPeripheral, current.identifier != identifier {
+                self.bluetoothManager.cancelPeripheralConnection(current)
+            }
+            self.connectedPeripheral = nil
+            self.writableCharacteristic = nil
+
+            let semaphore = DispatchSemaphore(value: 0)
+            self.connectingPeripheral = peripheral
+            self.connectionSemaphore = semaphore
+
+            if peripheral.state == .connected {
+                self.discoverServices(of: peripheral)
+            } else {
+                self.bluetoothManager.connect(peripheral, options: nil)
+            }
+            return .connecting(peripheral, semaphore)
+        }
+
+        switch start {
+        case .unknownDevice:
+            return false
+        case .alreadyConnected:
+            return true
+        case .connecting(let peripheral, let semaphore):
+            let finished = semaphore.wait(timeout: .now() + Self.connectTimeout) == .success
+
+            return bluetoothQueue.sync {
+                self.connectingPeripheral = nil
+                self.connectionSemaphore = nil
+
+                let ready = finished
+                    && self.connectedPeripheral?.identifier == identifier
+                    && peripheral.state == .connected
+                    && self.writableCharacteristic != nil
+                if !ready {
+                    // O `connect` do CoreBluetooth não expira sozinho. Sem
+                    // cancelar, a impressora fora de alcance conectava minutos
+                    // depois, com o app achando que estava desconectado.
+                    self.bluetoothManager.cancelPeripheralConnection(peripheral)
+                    if self.connectedPeripheral?.identifier == identifier {
+                        self.connectedPeripheral = nil
+                        self.writableCharacteristic = nil
+                    }
+                }
+                return ready
+            }
+        }
     }
 
     public func disconnectFromDevice() -> Bool {
-        if let peripheral = connectedPeripheral {
-            bluetoothManager?.cancelPeripheralConnection(peripheral)
+        bluetoothQueue.sync {
+            for peripheral in [self.connectedPeripheral, self.connectingPeripheral].compactMap({ $0 }) {
+                self.bluetoothManager.cancelPeripheralConnection(peripheral)
+            }
+            self.connectedPeripheral = nil
+            self.writableCharacteristic = nil
+            self.connectionSemaphore?.signal()
         }
-        connectedPeripheral = nil
-        writableCharacteristic = nil
+        pendingWriteSemaphore?.signal()
         return true
     }
 
@@ -144,9 +248,9 @@ public class BluetoothDataSource: NSObject, CBCentralManagerDelegate, CBPeripher
     }
 
     public func isConnected() -> Bool {
-        return connectedPeripheral != nil
-            && connectedPeripheral?.state == .connected
-            && writableCharacteristic != nil
+        return bluetoothQueue.sync {
+            self.connectedPeripheral?.state == .connected && self.writableCharacteristic != nil
+        }
     }
 
     public func configurePrinter(paperWidth: Int, heatingTime: Int?) {
@@ -185,7 +289,134 @@ public class BluetoothDataSource: NSObject, CBCentralManagerDelegate, CBPeripher
         return true
     }
 
-    // MARK: - Private helpers
+    // MARK: - Discovery helpers (bluetoothQueue only)
+
+    /// Roda `body` assim que o estado do Bluetooth deixa de ser provisório.
+    /// Logo depois de criado, o gerenciador fica em `.unknown` — e continua
+    /// assim enquanto o diálogo de permissão está na tela.
+    private func whenStateKnown(_ body: @escaping (CBManagerState) -> Void) {
+        let state = bluetoothManager.state
+        if state == .unknown || state == .resetting {
+            stateWaiters.append(body)
+        } else {
+            body(state)
+        }
+    }
+
+    /// O mesmo, de forma bloqueante, para quem está fora da `bluetoothQueue`.
+    private func waitForState() -> CBManagerState {
+        let semaphore = DispatchSemaphore(value: 0)
+        var resolved = CBManagerState.unknown
+        bluetoothQueue.async {
+            self.whenStateKnown { state in
+                resolved = state
+                semaphore.signal()
+            }
+        }
+        guard semaphore.wait(timeout: .now() + Self.stateTimeout) == .success else { return .unknown }
+        return resolved
+    }
+
+    private func startScanIfIdle() {
+        guard !isScanning else { return }
+        isScanning = true
+        candidates.removeAll()
+
+        addSystemConnectedPeripherals()
+
+        // Com duplicatas: o primeiro pacote de muitas impressoras chega sem o
+        // nome, que só vem na resposta ao scan. Sem repetição, o aparelho era
+        // descartado por não ter nome e nunca mais aparecia.
+        bluetoothManager.scanForPeripherals(
+            withServices: nil,
+            options: [CBCentralManagerScanOptionAllowDuplicatesKey: true]
+        )
+
+        bluetoothQueue.asyncAfter(deadline: .now() + Self.scanDuration) { [weak self] in
+            self?.finishScan()
+        }
+    }
+
+    private func finishScan() {
+        if bluetoothManager.state == .poweredOn {
+            bluetoothManager.stopScan()
+        }
+        isScanning = false
+
+        if let connected = connectedPeripheral {
+            addKnownPeripheral(connected, looksLikePrinter: true)
+        }
+
+        let devices = candidates.values
+            .sorted { a, b in
+                if a.looksLikePrinter != b.looksLikePrinter { return a.looksLikePrinter }
+                if a.rssi != b.rssi { return a.rssi > b.rssi }
+                return a.order < b.order
+            }
+            .map { BluetoothDeviceEntity(name: $0.name, address: $0.peripheral.identifier.uuidString) }
+
+        let waiters = scanWaiters
+        scanWaiters.removeAll()
+        waiters.forEach { $0(.success(devices)) }
+    }
+
+    /// Impressoras já conectadas ao iPhone não anunciam — é o caso de quem
+    /// pareou nos Ajustes, como faria no Android, ou deixou aberta a app do
+    /// fabricante. O iOS só as entrega pedindo por serviço.
+    private func addSystemConnectedPeripherals() {
+        for peripheral in bluetoothManager.retrieveConnectedPeripherals(withServices: PrinterGatt.printerServices) {
+            addKnownPeripheral(peripheral, looksLikePrinter: true)
+        }
+        for peripheral in bluetoothManager.retrieveConnectedPeripherals(withServices: PrinterGatt.genericServices) {
+            addKnownPeripheral(peripheral, looksLikePrinter: PrinterGatt.nameLooksLikePrinter(peripheral.name))
+        }
+    }
+
+    /// Entrada para um periférico que não veio de anúncio — sem RSSI, então
+    /// vai para o topo do seu grupo: está conectado, logo está perto.
+    private func addKnownPeripheral(_ peripheral: CBPeripheral, looksLikePrinter: Bool) {
+        guard candidates[peripheral.identifier] == nil else { return }
+        let name = Self.usableName(peripheral.name)
+        candidates[peripheral.identifier] = Candidate(
+            peripheral: peripheral,
+            name: name ?? Self.fallbackName(for: peripheral),
+            nameQuality: name == nil ? NameQuality.fallback : NameQuality.gap,
+            rssi: 0,
+            looksLikePrinter: looksLikePrinter,
+            order: candidates.count
+        )
+    }
+
+    private func knownPeripheral(_ identifier: UUID) -> CBPeripheral? {
+        if let candidate = candidates[identifier] { return candidate.peripheral }
+        if let connected = connectedPeripheral, connected.identifier == identifier { return connected }
+        if let known = bluetoothManager.retrievePeripherals(withIdentifiers: [identifier]).first { return known }
+        return bluetoothManager
+            .retrieveConnectedPeripherals(withServices: PrinterGatt.printerServices + PrinterGatt.genericServices)
+            .first { $0.identifier == identifier }
+    }
+
+    private static func usableName(_ raw: String?) -> String? {
+        guard let name = raw?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !name.isEmpty,
+              name.caseInsensitiveCompare("Unknown") != .orderedSame else { return nil }
+        return name
+    }
+
+    private static func fallbackName(for peripheral: CBPeripheral) -> String {
+        return "Printer \(peripheral.identifier.uuidString.prefix(4))"
+    }
+
+    // MARK: - Connection helpers (bluetoothQueue only)
+
+    private func discoverServices(of peripheral: CBPeripheral) {
+        connectedPeripheral = peripheral
+        writableCharacteristic = nil
+        peripheral.delegate = self
+        peripheral.discoverServices(nil)
+    }
+
+    // MARK: - Write helpers
 
     /// Quantas linhas de raster a impressora queima por segundo — ~50 mm/s a
     /// 203 dpi. Não muda com a bobina; o que muda é o tamanho da linha.
@@ -199,8 +430,13 @@ public class BluetoothDataSource: NSObject, CBCentralManagerDelegate, CBPeripher
     }
 
     private func writeImageData(_ data: Data) -> Bool {
-        guard let peripheral = connectedPeripheral,
-              let characteristic = writableCharacteristic else { return false }
+        let target: (CBPeripheral, CBCharacteristic)? = bluetoothQueue.sync {
+            guard let peripheral = self.connectedPeripheral,
+                  let characteristic = self.writableCharacteristic else { return nil }
+            return (peripheral, characteristic)
+        }
+        guard let target = target else { return false }
+        let (peripheral, characteristic) = target
 
         let writeType: CBCharacteristicWriteType = characteristic.properties.contains(.writeWithoutResponse)
             ? .withoutResponse
@@ -213,6 +449,11 @@ public class BluetoothDataSource: NSObject, CBCentralManagerDelegate, CBPeripher
         var offset = 0
 
         while offset < data.count {
+            // A escrita sem resposta não falha nunca do lado de cá: se a
+            // impressora caiu no meio, o envio seguia "com sucesso" para o
+            // nada e o app anunciava o cupom como impresso.
+            guard peripheral.state == .connected else { return false }
+
             let end = min(offset + chunkSize, data.count)
             let chunk = data.subdata(in: offset..<end)
             let started = Date()
@@ -258,14 +499,19 @@ public class BluetoothDataSource: NSObject, CBCentralManagerDelegate, CBPeripher
             peripheral.writeValue(chunk, for: characteristic, type: .withResponse)
             let result = semaphore.wait(timeout: .now() + 5.0)
             pendingWriteSemaphore = nil
-            return result == .success
+            return result == .success && peripheral.state == .connected
         } else {
             if !peripheral.canSendWriteWithoutResponse {
                 let semaphore = DispatchSemaphore(value: 0)
                 pendingWriteSemaphore = semaphore
-                _ = semaphore.wait(timeout: .now() + 5.0)
+                // Confere de novo já com o semáforo publicado: o aviso de
+                // "pronto" pode ter chegado entre a primeira checagem e aqui.
+                if !peripheral.canSendWriteWithoutResponse {
+                    _ = semaphore.wait(timeout: .now() + 5.0)
+                }
                 pendingWriteSemaphore = nil
             }
+            guard peripheral.state == .connected else { return false }
             peripheral.writeValue(chunk, for: characteristic, type: .withoutResponse)
             return true
         }
@@ -293,59 +539,108 @@ public class BluetoothDataSource: NSObject, CBCentralManagerDelegate, CBPeripher
     // MARK: - CBCentralManagerDelegate
 
     public func centralManagerDidUpdateState(_ central: CBCentralManager) {
-        switch central.state {
-        case .poweredOn:
-            print("Bluetooth is powered on")
-            managerReady = true
-            if let pending = pendingScanCompletion {
-                pendingScanCompletion = nil
-                startScan(bluetoothManager: central, completion: pending)
-            }
-        case .poweredOff:
-            print("Bluetooth is powered off")
-        case .unauthorized:
-            print("Bluetooth is not authorized")
-        case .unsupported:
-            print("Bluetooth is not supported on this device")
-        case .resetting:
-            print("Bluetooth state is resetting")
-        case .unknown:
-            print("Bluetooth state is unknown")
-        @unknown default:
-            print("A new Bluetooth state was added")
+        let state = central.state
+        if state == .unknown || state == .resetting { return }
+
+        // Antes só `.poweredOn` destravava quem esperava: com a permissão
+        // negada ou o Bluetooth desligado na abertura, a busca nunca respondia
+        // e a tela ficava carregando para sempre.
+        let waiters = stateWaiters
+        stateWaiters.removeAll()
+        waiters.forEach { $0(state) }
+
+        if state != .poweredOn {
+            // Desligado, o iOS invalida todos os periféricos sem avisar um a um.
+            connectedPeripheral = nil
+            writableCharacteristic = nil
+            connectionSemaphore?.signal()
+            pendingWriteSemaphore?.signal()
         }
     }
 
     public func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String: Any], rssi RSSI: NSNumber) {
-        guard let name = peripheral.name, !name.isEmpty, name != "Unknown" else { return }
-
-        let address = peripheral.identifier.uuidString
-
-        if discoveredPeripherals[address] == nil {
-            discoveredPeripherals[address] = peripheral
-            discoveredDevices.append(BluetoothDeviceEntity(name: name, address: address))
+        guard isScanning else { return }
+        if let connectable = advertisementData[CBAdvertisementDataIsConnectable] as? NSNumber, !connectable.boolValue {
+            return
         }
+
+        let advertisedServices = (advertisementData[CBAdvertisementDataServiceUUIDsKey] as? [CBUUID] ?? [])
+            + (advertisementData[CBAdvertisementDataOverflowServiceUUIDsKey] as? [CBUUID] ?? [])
+        let advertisesPrinterService = advertisedServices.contains { PrinterGatt.printerServices.contains($0) }
+
+        // O nome anunciado vem primeiro: `peripheral.name` é o nome GAP que o
+        // iOS guardou, e costuma ser `nil` em aparelho nunca conectado.
+        let advertisedName = Self.usableName(advertisementData[CBAdvertisementDataLocalNameKey] as? String)
+        let gapName = Self.usableName(peripheral.name)
+        let name = advertisedName ?? gapName
+        let quality = advertisedName != nil
+            ? NameQuality.advertised
+            : (gapName != nil ? NameQuality.gap : NameQuality.fallback)
+
+        // 127 é o "RSSI indisponível" do CoreBluetooth.
+        let rssi = RSSI.intValue == 127 ? -127 : RSSI.intValue
+
+        if var candidate = candidates[peripheral.identifier] {
+            if let name = name, quality >= candidate.nameQuality {
+                candidate.name = name
+                candidate.nameQuality = quality
+            }
+            candidate.rssi = max(candidate.rssi, rssi)
+            candidate.looksLikePrinter = candidate.looksLikePrinter
+                || advertisesPrinterService
+                || PrinterGatt.nameLooksLikePrinter(name)
+            candidates[peripheral.identifier] = candidate
+            return
+        }
+
+        // Sem nome e sem serviço de impressora é beacon, fone, relógio…
+        // nada que valha uma linha na lista.
+        guard name != nil || advertisesPrinterService else { return }
+
+        candidates[peripheral.identifier] = Candidate(
+            peripheral: peripheral,
+            name: name ?? Self.fallbackName(for: peripheral),
+            nameQuality: quality,
+            rssi: rssi,
+            looksLikePrinter: advertisesPrinterService || PrinterGatt.nameLooksLikePrinter(name),
+            order: candidates.count
+        )
     }
 
     public func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
-        connectedPeripheral = peripheral
-        peripheral.delegate = self
-        peripheral.discoverServices(nil)
+        guard peripheral.identifier == connectingPeripheral?.identifier else {
+            // Conexão que ninguém está esperando — sobra de uma tentativa que
+            // já expirou. Ficar com ela seria uma impressora presa à app sem
+            // que o app saiba.
+            central.cancelPeripheralConnection(peripheral)
+            return
+        }
+        discoverServices(of: peripheral)
     }
 
     public func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
-        connectionSemaphore?.signal()
+        if peripheral.identifier == connectingPeripheral?.identifier {
+            connectionSemaphore?.signal()
+        }
     }
 
     public func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
-        connectedPeripheral = nil
-        writableCharacteristic = nil
+        if peripheral.identifier == connectedPeripheral?.identifier {
+            connectedPeripheral = nil
+            writableCharacteristic = nil
+            pendingWriteSemaphore?.signal()
+        }
+        if peripheral.identifier == connectingPeripheral?.identifier {
+            connectionSemaphore?.signal()
+        }
     }
 
     // MARK: - CBPeripheralDelegate
 
     public func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
-        guard let services = peripheral.services, !services.isEmpty else {
+        guard peripheral.identifier == connectingPeripheral?.identifier else { return }
+
+        guard error == nil, let services = peripheral.services, !services.isEmpty else {
             connectionSemaphore?.signal()
             return
         }
@@ -367,33 +662,15 @@ public class BluetoothDataSource: NSObject, CBCentralManagerDelegate, CBPeripher
     }
 
     public func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
-        if writableCharacteristic == nil, let characteristics = service.characteristics {
-            let knownCharUUIDs: [CBUUID] = [
-                CBUUID(string: "49535343-8841-43F4-A8D4-ECBE34729BB3"),
-                CBUUID(string: "BEF8D6C9-9C21-4C9E-B632-BD58C1009F9F"),
-            ]
-
-            for char in characteristics {
-                if knownCharUUIDs.contains(char.uuid) &&
-                    (char.properties.contains(.write) || char.properties.contains(.writeWithoutResponse)) {
-                    writableCharacteristic = char
-                    break
-                }
-            }
-
-            if writableCharacteristic == nil {
-                for char in characteristics {
-                    if char.properties.contains(.writeWithoutResponse) || char.properties.contains(.write) {
-                        writableCharacteristic = char
-                        break
-                    }
-                }
-            }
-        }
+        guard peripheral.identifier == connectingPeripheral?.identifier else { return }
 
         pendingServiceCount -= 1
-        if pendingServiceCount <= 0 {
-            connectionSemaphore?.signal()
-        }
+        guard pendingServiceCount <= 0 else { return }
+
+        // Escolhe só com todos os serviços na mão: decidir no primeiro que
+        // respondesse pegava a característica gravável de configuração ou de
+        // firmware e a impressora conectava sem imprimir nada.
+        writableCharacteristic = PrinterGatt.bestWritableCharacteristic(in: peripheral.services ?? [])
+        connectionSemaphore?.signal()
     }
 }
