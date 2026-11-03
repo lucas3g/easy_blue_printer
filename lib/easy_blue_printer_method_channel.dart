@@ -66,6 +66,9 @@ class MethodChannelEasyBluePrinter extends EasyBluePrinterPlatform {
       // Ausente quando o chamador não pediu densidade: o lado nativo então
       // não manda `ESC 7` e a impressora fica como veio de fábrica.
       if (config.density != null) 'heatingTime': config.density!.heatingTime,
+      // Sempre presente: o nativo não sabe nada de densidade, recebe o ritmo
+      // já descontado.
+      'linesPerSecond': config.effectiveLinesPerSecond,
     });
   }
 

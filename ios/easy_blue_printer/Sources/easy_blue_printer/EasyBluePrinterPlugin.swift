@@ -98,7 +98,11 @@ public class EasyBluePrinterPlugin: NSObject, FlutterPlugin {
                 // `commitPrint` esvazia — da thread principal, as duas coisas
                 // podiam mexer nele ao mesmo tempo.
                 printQueue.async {
-                    AppModule.configurePrinterUseCase.execute(paperWidth: paperWidth, heatingTime: args["heatingTime"] as? Int)
+                    AppModule.configurePrinterUseCase.execute(
+                        paperWidth: paperWidth,
+                        heatingTime: args["heatingTime"] as? Int,
+                        linesPerSecond: args["linesPerSecond"] as? Int
+                    )
                     DispatchQueue.main.async {
                         result(nil)
                     }

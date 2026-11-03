@@ -10,6 +10,6 @@ interface BluetoothRepository {
     fun printEmptyLine(callTimes: Int): Boolean
     fun isConnected(): Boolean
     fun printImage(data: ByteArray, align: Int): Boolean
-    fun configurePrinter(paperWidth: Int, heatingTime: Int?)
+    fun configurePrinter(paperWidth: Int, heatingTime: Int?, linesPerSecond: Int?)
     fun commitPrint(): Boolean
 }

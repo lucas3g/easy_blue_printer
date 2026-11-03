@@ -42,8 +42,8 @@ public class BluetoothRepositoryImpl: BluetoothRepository {
         return dataSource.printImage(data: data, align: align)
     }
 
-    public func configurePrinter(paperWidth: Int, heatingTime: Int?) {
-        dataSource.configurePrinter(paperWidth: paperWidth, heatingTime: heatingTime)
+    public func configurePrinter(paperWidth: Int, heatingTime: Int?, linesPerSecond: Int?) {
+        dataSource.configurePrinter(paperWidth: paperWidth, heatingTime: heatingTime, linesPerSecond: linesPerSecond)
     }
 
     public func commitPrint() -> Bool {
