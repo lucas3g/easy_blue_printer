@@ -362,6 +362,22 @@ await printer.configurePrinter(
 > Not every printer implements `ESC 7`. Most that don't simply ignore it, but a few print the
 > parameters as text — that is why nothing is sent unless you ask for a density.
 
+### Send rate — `linesPerSecond`
+
+Bluetooth thermal printers have no flow control the plugin can rely on, so data is paced to
+the speed the paper comes out: `linesPerSecond` raster lines per second (default
+`PaperConfig.defaultLinesPerSecond`, 250 ≈ 31 mm/s at 203 dpi). A darker `density` slows the
+print head, so the rate is reduced automatically (`dark` ×0.75, `darkest` ×0.6).
+
+If the end of a long image comes out as random characters, the printer's buffer overflowed:
+lower the rate. Going too low only makes printing slower.
+
+```dart
+await printer.configurePrinter(
+  const PaperConfig(widthPixels: 576, density: PrintDensity.dark, linesPerSecond: 200),
+);
+```
+
 ## Complete Example
 
 ```dart
@@ -871,6 +887,22 @@ await printer.configurePrinter(
 > Nem toda impressora implementa o `ESC 7`. A maioria das que nao implementam simplesmente o
 > ignora, mas ha modelos que imprimem os parametros como texto — por isso nada e enviado a menos
 > que voce peca uma densidade.
+
+### Ritmo de envio — `linesPerSecond`
+
+As termicas Bluetooth nao tem um controle de fluxo em que o plugin possa confiar, entao o envio
+acompanha a velocidade do papel: `linesPerSecond` linhas de raster por segundo (padrao
+`PaperConfig.defaultLinesPerSecond`, 250 ≈ 31 mm/s a 203 dpi). Uma `density` mais escura deixa
+a cabeca mais lenta, e o ritmo cai sozinho (`dark` ×0,75, `darkest` ×0,6).
+
+Se o fim de uma imagem longa sair como caracteres soltos, o buffer da impressora estourou:
+baixe o ritmo. Baixo demais so deixa a impressao mais lenta.
+
+```dart
+await printer.configurePrinter(
+  const PaperConfig(widthPixels: 576, density: PrintDensity.dark, linesPerSecond: 200),
+);
+```
 
 ## Exemplo Completo
 

@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.4.0] - 2026-11-03
+
+### Fixed
+- **Long images ending in garbage characters**: the send rate was fixed at 400 raster lines per second (28.8 KB/s on an 80mm roll), the catalogue speed of a printer with factory heating and lightly filled paper. A darker `density` and dense black areas (barcodes, boleto bands) make the head print slower than that, so on a tall document the surplus piled up until the printer's buffer overflowed mid-`GS v 0`, dropped out of raster mode and printed the rest of the bytes as text. The default is now 250 lines/s, reduced further by the chosen density (`dark` ×0.75, `darkest` ×0.6), on both platforms.
+- **Android**: socket writes go out in 256-byte chunks instead of 512, so each burst into the printer's buffer is smaller.
+
+### Added
+- `PaperConfig.linesPerSecond`: overrides the send rate for printers that need it slower (or can take it faster). `PaperConfig.effectiveLinesPerSecond` shows the rate actually sent after the density discount.
+
 ## [2.3.0] - 2026-10-30
 
 ### Fixed (iOS)

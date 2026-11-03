@@ -61,6 +61,10 @@ public class BluetoothDataSource: NSObject, CBCentralManagerDelegate, CBPeripher
     /// fábrica e não manda comando nenhum.
     private var heatingTime: Int?
 
+    /// O ritmo do envio, em linhas de raster por segundo. Vem do Dart já
+    /// descontada a densidade; o padrão só vale até o primeiro `configurePrinter`.
+    private var linesPerSecond: Double = BluetoothDataSource.defaultLinesPerSecond
+
     // Semaphore used to block writeChunk until CoreBluetooth confirms the write.
     // Set on the print queue and signalled from the Bluetooth queue, hence the lock.
     private let writeLock = NSLock()
@@ -253,9 +257,10 @@ public class BluetoothDataSource: NSObject, CBCentralManagerDelegate, CBPeripher
         }
     }
 
-    public func configurePrinter(paperWidth: Int, heatingTime: Int?) {
+    public func configurePrinter(paperWidth: Int, heatingTime: Int?, linesPerSecond: Int?) {
         self.paperWidth = paperWidth
         self.heatingTime = heatingTime
+        self.linesPerSecond = linesPerSecond.map { Double(max($0, 1)) } ?? Self.defaultLinesPerSecond
         writeHeating()
     }
 
@@ -418,15 +423,17 @@ public class BluetoothDataSource: NSObject, CBCentralManagerDelegate, CBPeripher
 
     // MARK: - Write helpers
 
-    /// Quantas linhas de raster a impressora queima por segundo — ~50 mm/s a
-    /// 203 dpi. Não muda com a bobina; o que muda é o tamanho da linha.
-    private static let linesPerSecond: Double = 400
+    /// Quantas linhas de raster a impressora queima por segundo, quando o
+    /// Dart não mandou nada — o mesmo `PaperConfig.defaultLinesPerSecond`.
+    /// Não muda com a bobina; o que muda é o tamanho da linha. 400 estourava
+    /// o buffer em boleto, que tem muita área preta e imprime mais devagar.
+    private static let defaultLinesPerSecond: Double = 250
 
     /// Quantos bytes de raster a impressora consome por segundo, pela bobina
     /// configurada: 8 pontos por byte, 72 bytes por linha na de 80mm e 48 na
     /// de 58mm.
     private func bytesPerSecond() -> Double {
-        return Double(max(paperWidth / 8, 1)) * Self.linesPerSecond
+        return Double(max(paperWidth / 8, 1)) * linesPerSecond
     }
 
     private func writeImageData(_ data: Data) -> Bool {

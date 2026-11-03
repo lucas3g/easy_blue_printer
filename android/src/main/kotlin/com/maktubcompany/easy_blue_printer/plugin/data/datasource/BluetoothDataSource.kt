@@ -28,22 +28,28 @@ class BluetoothDataSource {
     // printEmptyLine, or printImage is called.
     private val printBuffer = ByteArrayOutputStream()
 
-    private companion object {
-        const val CHUNK_SIZE = 512
+    /// O ritmo do envio, em linhas de raster por segundo. Vem do Dart já
+    /// descontada a densidade; o padrão só vale até o primeiro `configurePrinter`.
+    private var linesPerSecond: Long = DEFAULT_LINES_PER_SECOND
 
-        /// Quantas linhas de raster a impressora queima por segundo.
+    private companion object {
+        /// Rajadas menores no socket: com 512 bytes, cada escrita já era quase
+        /// uma banda inteira de raster despejada de uma vez no buffer.
+        const val CHUNK_SIZE = 256
+
+        /// Quantas linhas de raster a impressora queima por segundo, quando o
+        /// Dart não mandou nada — o mesmo `PaperConfig.defaultLinesPerSecond`.
         ///
-        /// Uma térmica de 203 dpi imprime cerca de 50 mm/s, ou seja ~400
-        /// linhas/s, e isso não muda com a bobina: o que muda é quantos bytes
-        /// tem cada linha. O valor é deliberadamente conservador: o custo de
-        /// errar para menos é uma impressão mais lenta, e para mais é o buffer
-        /// estourar e o papel sair com lixo.
-        const val LINES_PER_SECOND = 400L
+        /// Não muda com a bobina: o que muda é quantos bytes tem cada linha.
+        /// Errar para menos custa uma impressão mais lenta; para mais, o
+        /// buffer estoura e o papel sai com lixo. 400 estourava em boleto.
+        const val DEFAULT_LINES_PER_SECOND = 250L
     }
 
-    fun configurePrinter(paperWidth: Int, heatingTime: Int?) {
+    fun configurePrinter(paperWidth: Int, heatingTime: Int?, linesPerSecond: Int?) {
         this.paperWidth = paperWidth
         this.heatingTime = heatingTime
+        this.linesPerSecond = linesPerSecond?.toLong()?.coerceAtLeast(1L) ?: DEFAULT_LINES_PER_SECOND
         writeHeating()
     }
 
@@ -145,7 +151,7 @@ class BluetoothDataSource {
     /// byte, então a linha tem 72 bytes na de 80mm (576 pontos) e 48 na de
     /// 58mm (384). Um número fixo de 80mm alimentava a bobina estreita 1,5x
     /// mais rápido do que o papel saía — o envio terminava antes da impressão.
-    private fun bytesPerSecond(): Long = (paperWidth / 8).toLong().coerceAtLeast(1L) * LINES_PER_SECOND
+    private fun bytesPerSecond(): Long = (paperWidth / 8).toLong().coerceAtLeast(1L) * linesPerSecond
 
     private fun sendChunked(bytes: ByteArray): Boolean {
         val chunkSize = CHUNK_SIZE

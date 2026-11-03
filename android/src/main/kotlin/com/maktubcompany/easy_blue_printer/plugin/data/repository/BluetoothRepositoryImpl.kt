@@ -36,8 +36,8 @@ class BluetoothRepositoryImpl(
         return dataSource.printImage(data, align)
     }
 
-    override fun configurePrinter(paperWidth: Int, heatingTime: Int?) {
-        dataSource.configurePrinter(paperWidth, heatingTime)
+    override fun configurePrinter(paperWidth: Int, heatingTime: Int?, linesPerSecond: Int?) {
+        dataSource.configurePrinter(paperWidth, heatingTime, linesPerSecond)
     }
 
     override fun commitPrint(): Boolean {
